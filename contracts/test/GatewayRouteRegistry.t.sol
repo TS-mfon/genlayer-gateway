@@ -54,13 +54,19 @@ contract GatewayRouteRegistryTest {
     function testInvalidRouteAndDuplicateRevert() public {
         vm.expectRevert(GatewayRouteRegistry.InvalidAddress.selector);
         vm.prank(OWNER);
-        registry.registerRoute(bytes32(0), address(0x1234), bytes4(uint32(1)), ARGUMENT_SCHEMA, RESULT_SCHEMA);
+        registry.registerRoute(
+            bytes32(0), address(0x1234), bytes4(uint32(1)), ARGUMENT_SCHEMA, RESULT_SCHEMA
+        );
 
         vm.prank(OWNER);
-        registry.registerRoute(ROUTE, address(0x1234), bytes4(uint32(1)), ARGUMENT_SCHEMA, RESULT_SCHEMA);
+        registry.registerRoute(
+            ROUTE, address(0x1234), bytes4(uint32(1)), ARGUMENT_SCHEMA, RESULT_SCHEMA
+        );
         vm.expectPartialRevert(GatewayRouteRegistry.DuplicateRoute.selector);
         vm.prank(OWNER);
-        registry.registerRoute(ROUTE, address(0x5678), bytes4(uint32(2)), ARGUMENT_SCHEMA, RESULT_SCHEMA);
+        registry.registerRoute(
+            ROUTE, address(0x5678), bytes4(uint32(2)), ARGUMENT_SCHEMA, RESULT_SCHEMA
+        );
     }
 
     function testSchemaAndUnknownStatusRevert() public {

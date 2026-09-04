@@ -12,7 +12,13 @@ contract GatewayRouterV2 {
     uint256 public constant CALLBACK_GAS_LIMIT = 500_000;
     uint8 public constant PROTOCOL_VERSION = 2;
 
-    enum Status { None, Dispatched, Finalized, CallbackPending, CallbackExecuted }
+    enum Status {
+        None,
+        Dispatched,
+        Finalized,
+        CallbackPending,
+        CallbackExecuted
+    }
 
     struct Request {
         address requester;
@@ -47,8 +53,12 @@ contract GatewayRouterV2 {
     error NothingToWithdraw();
     error TransferFailed();
 
-    event RouteRequestDispatched(bytes32 indexed requestId, bytes32 indexed routeId, bytes32 indexed messageId);
-    event RouteResultFinalized(bytes32 indexed requestId, bytes32 indexed routeId, bytes32 resultTxHash, bytes32 resultHash);
+    event RouteRequestDispatched(
+        bytes32 indexed requestId, bytes32 indexed routeId, bytes32 indexed messageId
+    );
+    event RouteResultFinalized(
+        bytes32 indexed requestId, bytes32 indexed routeId, bytes32 resultTxHash, bytes32 resultHash
+    );
     event CallbackAttempted(bytes32 indexed requestId, bool succeeded);
     event ResultReceiverUpdated(address indexed oldReceiver, address indexed newReceiver);
     event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
@@ -63,14 +73,23 @@ contract GatewayRouterV2 {
 
     constructor(address initialOwner, address initialTransport, address registry_) {
         if (block.chainid != BASE_SEPOLIA_CHAIN_ID) revert TestnetOnly(block.chainid);
-        if (initialOwner == address(0) || initialTransport == address(0) || registry_ == address(0)) revert InvalidAddress();
+        if (initialOwner == address(0) || initialTransport == address(0) || registry_ == address(0))
+        {
+            revert InvalidAddress();
+        }
         owner = initialOwner;
         transport = ITransportAdapter(initialTransport);
         routeRegistry = GatewayRouteRegistry(registry_);
     }
 
-    modifier onlyOwner() { if (msg.sender != owner) revert Unauthorized(msg.sender); _; }
-    modifier onlyResultReceiver() { if (msg.sender != resultReceiver) revert Unauthorized(msg.sender); _; }
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized(msg.sender);
+        _;
+    }
+    modifier onlyResultReceiver() {
+        if (msg.sender != resultReceiver) revert Unauthorized(msg.sender);
+        _;
+    }
 
     function requestRoute(
         bytes32 routeId,
@@ -82,30 +101,68 @@ contract GatewayRouterV2 {
         GatewayRouteRegistry.Route memory route = routeRegistry.getRoute(routeId);
         if (!route.active || route.destinationContract == address(0)) revert InvalidRoute(routeId);
         if (callback == address(0)) revert InvalidAddress();
-        if (arguments_.length == 0 || arguments_.length > MAX_ARGUMENT_BYTES) revert InvalidArguments();
+        if (arguments_.length == 0 || arguments_.length > MAX_ARGUMENT_BYTES) {
+            revert InvalidArguments();
+        }
         if (expiry <= block.timestamp) revert InvalidExpiry();
         if (msg.value != REQUEST_FEE) revert InvalidFee(msg.value, REQUEST_FEE);
         if (nonce <= latestNonce[msg.sender]) revert DuplicateRequest(bytes32(uint256(nonce)));
 
         bytes32 argumentsHash = keccak256(arguments_);
-        requestId = keccak256(abi.encode(
-            PROTOCOL_VERSION, block.chainid, address(this), msg.sender, callback, routeId,
-            route.destinationContract, route.methodSelector, route.argumentSchema, route.resultSchema,
-            argumentsHash, nonce, expiry
-        ));
+        requestId = keccak256(
+            abi.encode(
+                PROTOCOL_VERSION,
+                block.chainid,
+                address(this),
+                msg.sender,
+                callback,
+                routeId,
+                route.destinationContract,
+                route.methodSelector,
+                route.argumentSchema,
+                route.resultSchema,
+                argumentsHash,
+                nonce,
+                expiry
+            )
+        );
         if (requests[requestId].status != Status.None) revert DuplicateRequest(requestId);
         bytes memory payload = abi.encode(
-            PROTOCOL_VERSION, requestId, routeId, block.chainid, address(this), msg.sender, callback,
-            nonce, expiry, route.destinationContract, route.methodSelector, route.argumentSchema,
-            route.resultSchema, arguments_, argumentsHash
+            PROTOCOL_VERSION,
+            requestId,
+            routeId,
+            block.chainid,
+            address(this),
+            msg.sender,
+            callback,
+            nonce,
+            expiry,
+            route.destinationContract,
+            route.methodSelector,
+            route.argumentSchema,
+            route.resultSchema,
+            arguments_,
+            argumentsHash
         );
         uint256 deliveryFee = transport.quoteDispatch(payload);
         if (deliveryFee > msg.value) revert InvalidFee(msg.value, deliveryFee);
         latestNonce[msg.sender] = nonce;
         requests[requestId] = Request(
-            msg.sender, callback, routeId, route.destinationContract, route.methodSelector,
-            route.argumentSchema, route.resultSchema, argumentsHash, nonce, expiry, bytes32(0),
-            bytes32(0), bytes32(0), Status.Dispatched, false
+            msg.sender,
+            callback,
+            routeId,
+            route.destinationContract,
+            route.methodSelector,
+            route.argumentSchema,
+            route.resultSchema,
+            argumentsHash,
+            nonce,
+            expiry,
+            bytes32(0),
+            bytes32(0),
+            bytes32(0),
+            Status.Dispatched,
+            false
         );
         messageId = transport.dispatch{ value: deliveryFee }(payload);
         requests[requestId].outboundMessageId = messageId;
@@ -113,11 +170,18 @@ contract GatewayRouterV2 {
         emit RouteRequestDispatched(requestId, routeId, messageId);
     }
 
-    function handleResult(bytes32 requestId, bytes32 resultTxHash, bytes calldata result) external onlyResultReceiver {
+    function handleResult(bytes32 requestId, bytes32 resultTxHash, bytes calldata result)
+        external
+        onlyResultReceiver
+    {
         Request storage request = requests[requestId];
         if (request.status == Status.None) revert UnknownRequest(requestId);
-        if (request.status != Status.Dispatched) revert InvalidRequestState(requestId, request.status);
-        if (block.timestamp > request.expiry || resultTxHash == bytes32(0) || result.length == 0) revert InvalidResult();
+        if (request.status != Status.Dispatched) {
+            revert InvalidRequestState(requestId, request.status);
+        }
+        if (block.timestamp > request.expiry || resultTxHash == bytes32(0) || result.length == 0) {
+            revert InvalidResult();
+        }
         request.resultTxHash = resultTxHash;
         request.resultHash = keccak256(result);
         request.status = Status.Finalized;
@@ -131,7 +195,9 @@ contract GatewayRouterV2 {
 
     function retryCallback(bytes32 requestId, bytes calldata result) external returns (bool) {
         Request storage request = requests[requestId];
-        if (request.status != Status.CallbackPending) revert InvalidRequestState(requestId, request.status);
+        if (request.status != Status.CallbackPending) {
+            revert InvalidRequestState(requestId, request.status);
+        }
         if (keccak256(result) != request.resultHash) revert InvalidResult();
         return _attemptCallback(requestId, request, result);
     }
@@ -164,11 +230,17 @@ contract GatewayRouterV2 {
         if (!sent) revert TransferFailed();
     }
 
-    function _attemptCallback(bytes32 requestId, Request storage request, bytes calldata result) internal returns (bool succeeded) {
+    function _attemptCallback(bytes32 requestId, Request storage request, bytes calldata result)
+        internal
+        returns (bool succeeded)
+    {
         if (request.callbackLocked) revert CallbackReentrancy();
         request.callbackLocked = true;
         request.status = Status.CallbackPending;
-        bytes memory data = abi.encodeCall(IGatewayBytesCallback.onGatewayResult, (requestId, request.routeId, request.resultTxHash, result));
+        bytes memory data = abi.encodeCall(
+            IGatewayBytesCallback.onGatewayResult,
+            (requestId, request.routeId, request.resultTxHash, result)
+        );
         (succeeded,) = request.callback.call{ gas: CALLBACK_GAS_LIMIT }(data);
         if (succeeded) request.status = Status.CallbackExecuted;
         else request.callbackLocked = false;

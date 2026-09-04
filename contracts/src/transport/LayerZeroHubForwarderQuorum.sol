@@ -186,12 +186,13 @@ contract LayerZeroHubForwarderQuorum {
                 || localContract != trustedOriginRouter || originMessageId == bytes32(0)
                 || address(hubReceiver) == address(0)
         ) revert InvalidInboundMessage(1);
-        IQuorumHubMessageStore.PendingMessage memory pending = hubReceiver.getMessage(originMessageId);
+        IQuorumHubMessageStore.PendingMessage memory pending =
+            hubReceiver.getMessage(originMessageId);
         bytes memory inboundData = pending.data;
         if (inboundData.length < 64) revert InvalidInboundMessage(2);
-        if (
-            !pending.relayed || pending.targetGenLayerContract != trustedGenLayerSender
-        ) revert InvalidInboundMessage(4);
+        if (!pending.relayed || pending.targetGenLayerContract != trustedGenLayerSender) {
+            revert InvalidInboundMessage(4);
+        }
         bytes32 inboundRequestId;
         assembly ("memory-safe") {
             inboundRequestId := mload(add(inboundData, 64))

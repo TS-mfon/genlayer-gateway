@@ -21,9 +21,12 @@ contract BytesCallback is IGatewayBytesCallback {
     bytes32 public lastResultTxHash;
     bytes public lastResult;
 
-    function onGatewayResult(bytes32 requestId, bytes32 routeId, bytes32 resultTxHash, bytes calldata result)
-        external
-    {
+    function onGatewayResult(
+        bytes32 requestId,
+        bytes32 routeId,
+        bytes32 resultTxHash,
+        bytes calldata result
+    ) external {
         calls++;
         lastRequestId = requestId;
         lastRouteId = routeId;

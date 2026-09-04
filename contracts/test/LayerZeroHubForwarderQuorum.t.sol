@@ -2,7 +2,10 @@
 pragma solidity ^0.8.28;
 
 import { MockLayerZeroEndpoint } from "../src/mocks/MockLayerZeroEndpoint.sol";
-import { LayerZeroHubForwarderQuorum, IQuorumHubMessageStore } from "../src/transport/LayerZeroHubForwarderQuorum.sol";
+import {
+    LayerZeroHubForwarderQuorum,
+    IQuorumHubMessageStore
+} from "../src/transport/LayerZeroHubForwarderQuorum.sol";
 import { GatewayRouter } from "../src/GatewayRouter.sol";
 
 interface VmQuorum {
@@ -67,21 +70,41 @@ contract LayerZeroHubForwarderQuorumTest {
         forwarder.setHubReceiver(address(store));
 
         bytes memory inbound = abi.encode(
-            uint8(1), REQUEST_ID, uint256(84_532), address(0x5555), address(0x6666),
-            address(0x7777), uint64(1), uint64(2_000_000_000), "question", "policy",
-            "https://evidence.example", EVIDENCE_HASH
+            uint8(1),
+            REQUEST_ID,
+            uint256(84_532),
+            address(0x5555),
+            address(0x6666),
+            address(0x7777),
+            uint64(1),
+            uint64(2_000_000_000),
+            "question",
+            "policy",
+            "https://evidence.example",
+            EVIDENCE_HASH
         );
         store.set(ORIGIN_MESSAGE_ID, inbound);
 
         bytes memory inner = abi.encode(
-            uint8(1), REQUEST_ID, uint8(GatewayRouter.Decision.Pass), EVIDENCE_HASH,
-            POLICY_HASH, RESULT_TX_HASH, ORIGIN_MESSAGE_ID
+            uint8(1),
+            REQUEST_ID,
+            uint8(GatewayRouter.Decision.Pass),
+            EVIDENCE_HASH,
+            POLICY_HASH,
+            RESULT_TX_HASH,
+            ORIGIN_MESSAGE_ID
         );
         bytes memory message = abi.encode(4_221, address(0x4444), address(0x5555), inner);
         resultMessageHash = keccak256(message);
         bytes32 digest = forwarder.getResultAttestationDigest(
-            RESULT_TX_HASH, REQUEST_ID, uint8(GatewayRouter.Decision.Pass), EVIDENCE_HASH,
-            POLICY_HASH, ORIGIN_MESSAGE_ID, BASE_EID, resultMessageHash
+            RESULT_TX_HASH,
+            REQUEST_ID,
+            uint8(GatewayRouter.Decision.Pass),
+            EVIDENCE_HASH,
+            POLICY_HASH,
+            ORIGIN_MESSAGE_ID,
+            BASE_EID,
+            resultMessageHash
         );
         validAttestations.push(_sign(SIGNER_ONE, digest));
         validAttestations.push(_sign(SIGNER_TWO, digest));
@@ -99,7 +122,9 @@ contract LayerZeroHubForwarderQuorumTest {
         bytes[] memory one = new bytes[](1);
         one[0] = validAttestations[0];
         vm.expectRevert(LayerZeroHubForwarderQuorum.InvalidSignature.selector);
-        forwarder.forwardResult{ value: 0.0001 ether }(RESULT_TX_HASH, BASE_EID, _message(), "", one);
+        forwarder.forwardResult{ value: 0.0001 ether }(
+            RESULT_TX_HASH, BASE_EID, _message(), "", one
+        );
     }
 
     function testDuplicateSignerCannotSatisfyQuorum() public {
@@ -130,8 +155,13 @@ contract LayerZeroHubForwarderQuorumTest {
 
     function _message() private pure returns (bytes memory) {
         bytes memory inner = abi.encode(
-            uint8(1), REQUEST_ID, uint8(GatewayRouter.Decision.Pass), EVIDENCE_HASH,
-            POLICY_HASH, RESULT_TX_HASH, ORIGIN_MESSAGE_ID
+            uint8(1),
+            REQUEST_ID,
+            uint8(GatewayRouter.Decision.Pass),
+            EVIDENCE_HASH,
+            POLICY_HASH,
+            RESULT_TX_HASH,
+            ORIGIN_MESSAGE_ID
         );
         return abi.encode(4_221, address(0x4444), address(0x5555), inner);
     }

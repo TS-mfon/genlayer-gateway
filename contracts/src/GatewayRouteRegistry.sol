@@ -46,13 +46,21 @@ contract GatewayRouteRegistry {
         bytes32 argumentSchema,
         bytes32 resultSchema
     ) external onlyOwner {
-        if (routeId == bytes32(0) || destinationContract == address(0)) revert InvalidAddress();
-        if (methodSelector == bytes4(0) || argumentSchema == bytes32(0) || resultSchema == bytes32(0)) {
+        if (routeId == bytes32(0) || destinationContract == address(0)) {
+            revert InvalidAddress();
+        }
+        if (
+            methodSelector == bytes4(0) || argumentSchema == bytes32(0)
+                || resultSchema == bytes32(0)
+        ) {
             revert InvalidSchema();
         }
         if (routes[routeId].destinationContract != address(0)) revert DuplicateRoute(routeId);
-        routes[routeId] = Route(destinationContract, methodSelector, argumentSchema, resultSchema, true);
-        emit RouteRegistered(routeId, destinationContract, methodSelector, argumentSchema, resultSchema);
+        routes[routeId] =
+            Route(destinationContract, methodSelector, argumentSchema, resultSchema, true);
+        emit RouteRegistered(
+            routeId, destinationContract, methodSelector, argumentSchema, resultSchema
+        );
     }
 
     function setRouteStatus(bytes32 routeId, bool active) external onlyOwner {
