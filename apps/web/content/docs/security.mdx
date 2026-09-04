@@ -1,0 +1,41 @@
+# Security model
+
+## Authority
+
+The GenLayer Intelligent Contract stores the intended authoritative result. Vercel, MongoDB, GitHub Actions, and webhooks cannot directly alter router state. The live v0.1 authorized hub relayer can submit return bytes, but the single result-attestor key remains a disclosed testnet trust assumption until Base can verify GenLayer finality cryptographically.
+
+The additive `LayerZeroHubForwarderQuorum` contract is the v0.2 mainnet-hardening path. It requires a configurable quorum of distinct authorized signatures over the complete result envelope, binds signatures to the current signer epoch and forwarder address, rejects replayed result transaction hashes, and supports signer rotation. A quorum reduces single-key compromise risk but is still not a cryptographic proof of GenLayer finality; destination-verifiable proofs, a native bridge, slashing, or formal acceptance remain required for a mainnet trust claim.
+
+## Callback verification
+
+`GatewayRouter.handleResult` accepts calls only from the configured Base result receiver. The receiver verifies the LayerZero endpoint, trusted hub forwarder, GenLayer sender identity, router destination, protocol version, and result transaction hash.
+
+The router also verifies:
+
+- the request exists;
+- the request has not already finalized;
+- the policy commitment matches;
+- the evidence commitment matches;
+- the decision is an allowed enum value.
+
+## Recovery after a finalized transaction has no result
+
+If Bradbury reports a finalized transaction but `get_result` is empty, the relay fails closed and transitions the off-chain request to `REQUIRES_REVIEW`. No return message or escrow settlement is produced. A permissionless retry clears the retry lease; reconciliation can resubmit the same committed adjudication request, and only a non-empty, schema-valid result can move the request back to `ADJUDICATING` and continue. The application escrow separately prevents an `UNDETERMINED` bounty refund before its job deadline.
+
+## Prompt injection
+
+The GenLayer contract places immutable adjudication rules before the question, policy, and evidence. Evidence is explicitly delimited as untrusted data. Validators independently repeat evaluation and compare the substantive decision.
+
+## Serverless limitations
+
+Vercel and scheduled GitHub Actions are bounded, best-effort triggers. MongoDB leases and idempotency make retries safe, but they do not guarantee continuous liveness. Mainnet operation requires durable relayer infrastructure.
+
+## Key management
+
+- Never expose deployer or relayer private keys through `NEXT_PUBLIC_*` variables.
+- Use separate deployment and relay wallets.
+- Restrict GitHub environment access.
+- Rotate a compromised key and update authorized submitters immediately.
+- Do not use a personal wallet for automated execution.
+
+When an application supplies an API signature, the EIP-712 payload includes the selected `routeId` (defaulting to `gateway-adjudicator`). A valid signature for one reviewed destination therefore cannot be replayed as attribution for another route. This does not replace the on-chain request commitment; it is an additional application-level binding.

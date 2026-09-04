@@ -1,0 +1,29 @@
+name: Reconcile Gateway Requests
+
+on:
+  schedule:
+    - cron: "7,27,47 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: gateway-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    environment: testnet-operations
+    steps:
+      - name: Invoke protected reconciliation endpoint
+        env:
+          RECONCILE_URL: ${{ secrets.RECONCILE_URL }}
+          RECONCILE_SECRET: ${{ secrets.RECONCILE_SECRET }}
+        run: |
+          test -n "$RECONCILE_URL"
+          test -n "$RECONCILE_SECRET"
+          curl --fail-with-body --retry 2 --retry-all-errors \
+            -H "Authorization: Bearer $RECONCILE_SECRET" \
+            -H "User-Agent: genlayer-gateway-github-reconciler" \
+            "$RECONCILE_URL"

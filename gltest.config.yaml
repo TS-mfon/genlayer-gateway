@@ -1,0 +1,5 @@
+paths:
+  contracts: "genlayer/contracts"
+  artifacts: "artifacts"
+
+environment: .env

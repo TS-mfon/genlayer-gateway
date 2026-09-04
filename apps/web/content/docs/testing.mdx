@@ -1,0 +1,30 @@
+# Testing gates
+
+Every implementation phase uses 20 distinct jobs. At least 17 must meet their expected result before the next phase advances.
+
+An expected negative result counts as passing when the protocol correctly rejects or contains the attack. For example, a replay job passes when the replay is rejected.
+
+## Required job classes
+
+1. Complete work with passing tests.
+2. Missing deployment.
+3. Failing tests.
+4. Mutable branch reference.
+5. Valid commit SHA.
+6. Content digest mismatch.
+7. Unavailable evidence URL.
+8. Oversized evidence.
+9. Prompt-injection evidence.
+10. Contradictory artifacts.
+11. Duplicate request.
+12. Replayed result.
+13. Wrong remote sender.
+14. Wrong evidence commitment.
+15. Wrong policy commitment.
+16. Callback revert followed by retry.
+17. Late verdict after timeout.
+18. `UNDETERMINED` resolution.
+19. Relayer interruption and recovery.
+20. Normal escrow release.
+
+Official transport and GenLayer integration gates must run on official testnets. Local mocks may validate invariants but do not count as proof of live interoperability.

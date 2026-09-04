@@ -1,0 +1,64 @@
+# Test application guide
+
+## Why there are separate pages
+
+The landing page is intentionally minimal. It answers one question—what role are you playing?—without exposing protocol internals.
+
+| Route | Purpose | Primary signer |
+| --- | --- | --- |
+| `/` | Choose Client or Worker | None |
+| `/create-job` | Fund and create a task | Client wallet on Base Sepolia |
+| `/dashboard/client` | Track jobs posted by this browser | None for reads |
+| `/dashboard/worker` | See live task cards | None for reads |
+| `/jobs/:id` | Inspect one task and its progress | Role-dependent |
+| `/requests/:requestId` | Follow the human-readable cross-chain request trace | Anyone with a request ID |
+| `/test-console` | Run the guided two-wallet escrow-to-GenLayer test flow | Client and worker wallets on Base Sepolia |
+| `/playground` | Inspect a reviewed route and compose a developer request preview | Developers evaluating an integration |
+
+## Human status language
+
+The UI translates protocol states into labels:
+
+- `Open`: created and awaiting evidence.
+- `Claimed`: a worker is assigned.
+- `In Review`: evidence or a GenLayer request is being processed.
+- `Completed`: a PASS callback released the bounty.
+- `Refunded`: a FAIL or timeout refunded the client.
+- `Review Required`: the result needs operational recovery; the UI never implies a successful settlement.
+
+## Persistence contract
+
+The browser stores a lightweight job projection in `localStorage`. This solves the presentation problem where a successful wallet transaction was followed by an empty dashboard. It is not a source of truth and is not used by the relay to create results. A future hosted experience should replace or supplement it with an authenticated database query keyed by on-chain job IDs.
+
+## Multi-contract roadmap
+
+The current UI demonstrates the canonical escrow path. To support arbitrary GenLayer contracts, the next UI/API surface should add a **Route profile** selector with:
+
+1. destination GenLayer contract address;
+2. allowed method from a fetched schema;
+3. typed arguments;
+4. evidence and policy commitments;
+5. callback/result schema;
+6. fee, timeout, and trust-model disclosure.
+
+Only route profiles published by the protocol owner or explicitly approved by an application should be selectable. An arbitrary address must not be treated as trusted merely because it is a valid contract address.
+
+The current read-only route catalogue is available at `/api/v1/routes`. It exposes the active testnet profile and its trust model so an integrator can explain exactly which GenLayer contract will receive a request.
+
+Use `/playground` before writing contract code. Select a route, inspect the exact destination and schemas, edit a representative question/policy/evidence request, then copy JSON, cURL, or Solidity. The preview is intentionally not a generic transaction sender: it teaches the request boundary without granting the browser authority to choose an arbitrary GenLayer destination.
+
+## Guided test console
+
+Use `/test-console` when you want to exercise the deployed testnet path directly. The console keeps the
+workflow in one place while still making the signer boundary explicit:
+
+1. Connect the client wallet and enter a worker address.
+2. Create the funded escrow job on Base Sepolia.
+3. Load the sample evidence or provide an HTTPS evidence URL and commitment hash.
+4. Switch to the worker wallet and submit the evidence.
+5. Switch back to the client wallet and dispatch the verification request.
+6. Look up the request to follow delivery, GenLayer adjudication, result attestation, callback, and settlement.
+
+The console calls the reviewed route configured by the server; it does not accept an arbitrary GenLayer
+address or arbitrary method from the browser. This keeps the demo understandable and prevents the UI from
+implying that every Intelligent Contract is automatically compatible with the deployed encoder and decoder.

@@ -1,0 +1,35 @@
+{
+  "name": "genlayer-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @gateway/web",
+    "build": "npm run build --workspace @gateway/protocol && npm run build --workspace @gateway/web",
+    "lint": "npm run lint --workspace @gateway/protocol && npm run lint --workspace @gateway/web",
+    "test": "npm run test --workspace @gateway/protocol && npm run test --workspace @gateway/web",
+    "test:contracts": "forge test --root contracts -vvv",
+    "test:genlayer:lint": "uvx --from genvm-linter genvm-lint check genlayer/contracts/gateway_adjudicator.py",
+    "test:genlayer:direct": "uvx --from genlayer-test pytest genlayer/tests/direct -q",
+    "test:jobs": "npm run test:jobs --workspace @gateway/web",
+    "test:testnet-phase-gate": "node scripts/run-testnet-phase-gate.mjs",
+    "test:testnet-phase-gate:monitor": "node scripts/monitor-testnet-phase-gate.mjs",
+    "test:testnet-request:resume": "node scripts/resume-testnet-request.mjs",
+    "validate:deployment-env": "node scripts/validate-deployment-env.mjs",
+    "generate:attestor-keys": "node scripts/generate-attestor-keys.mjs",
+    "deploy:hub-quorum": "./scripts/deploy-hub-quorum.sh",
+    "configure:hub-quorum": "./scripts/configure-hub-quorum.sh",
+    "transfer:quorum-ownership": "./scripts/transfer-quorum-ownership.sh",
+    "verify:live-deployment": "node scripts/verify-live-deployment.mjs",
+    "check": "npm run lint && npm run test && npm run build"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
+  }
+}

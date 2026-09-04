@@ -1,0 +1,22 @@
+[
+  { "id": "job-01", "title": "Complete escrow contract", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-02", "title": "Missing deployment", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": false, "promptInjection": false, "expected": "FAIL" },
+  { "id": "job-03", "title": "Failing unit tests", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": false, "deploymentVerified": true, "promptInjection": false, "expected": "FAIL" },
+  { "id": "job-04", "title": "Mutable main branch", "commitPinned": false, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "UNDETERMINED" },
+  { "id": "job-05", "title": "Pinned release artifact", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-06", "title": "Artifact digest mismatch", "commitPinned": true, "digestMatches": false, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "FAIL" },
+  { "id": "job-07", "title": "Unavailable evidence host", "commitPinned": true, "digestMatches": true, "evidenceReachable": false, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "UNDETERMINED" },
+  { "id": "job-08", "title": "Complete API adapter", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-09", "title": "Evidence contains prompt injection", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": true, "expected": "UNDETERMINED" },
+  { "id": "job-10", "title": "Complete documentation package", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-11", "title": "Deployment without source match", "commitPinned": true, "digestMatches": false, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "FAIL" },
+  { "id": "job-12", "title": "Complete callback receiver", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-13", "title": "Tests omitted", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": false, "deploymentVerified": true, "promptInjection": false, "expected": "FAIL" },
+  { "id": "job-14", "title": "Complete event indexer", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-15", "title": "Unpinned package artifact", "commitPinned": false, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "UNDETERMINED" },
+  { "id": "job-16", "title": "Complete retry service", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-17", "title": "Complete operator console", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-18", "title": "Contradictory deployment report", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": false, "promptInjection": false, "expected": "FAIL" },
+  { "id": "job-19", "title": "Complete evidence manifest", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" },
+  { "id": "job-20", "title": "Complete deployment scripts", "commitPinned": true, "digestMatches": true, "evidenceReachable": true, "testsPass": true, "deploymentVerified": true, "promptInjection": false, "expected": "PASS" }
+]

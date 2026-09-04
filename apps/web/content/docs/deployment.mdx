@@ -1,0 +1,37 @@
+# Deployment
+
+## Supported network
+
+Version 0.1.0 supports Base Sepolia only. `GatewayRouter` rejects construction on any other chain ID.
+
+## Environment separation
+
+Use separate Vercel environments for preview and production-testnet deployments. Each environment receives its own MongoDB database, reconciliation secret, deployment addresses, and relayer wallet.
+
+The Hobby deployment schedules one daily safety reconciliation because Vercel Hobby limits cron jobs to daily execution. Live requests and phase-gate runs invoke the authenticated reconciliation endpoint directly, so they do not wait for the scheduled job. Production operations that require unattended sub-daily reconciliation need a Vercel plan supporting that interval.
+
+## Transport deployment policy
+
+Use Hyperlane only after the selected Base Sepolia ↔ GenLayer route, domains, mailbox/router contracts, remote sender, and security module are verified from official sources and successful live messages.
+
+The included fallback follows the official GenLayer bridge pattern with LayerZero-compatible hub contracts and an authorized relay. Display it as `LayerZero authorized-relay prototype`; do not present it as Hyperlane-powered or trustless.
+
+Deploy in this order:
+
+1. `DeployHub.s.sol`;
+2. `DeployBaseSepolia.s.sol` using the hub addresses;
+3. `scripts/deploy-genlayer.sh`;
+4. `ConfigureHub.s.sol` using the Base sender/result receiver and GenLayer adjudicator;
+5. `ConfigureBaseSepolia.s.sol` using the deployed GenLayer address;
+6. `TransferHubOwnership.s.sol` and `TransferBaseOwnership.s.sol` to move administration away from deployer keys;
+7. run `npm run verify:live-deployment`;
+8. write every address, endpoint, EID, block, and transaction to a deployment manifest.
+
+## Vercel
+
+Vercel hosts the Next.js product and API. Reconciliation functions must finish inside the configured function duration, inspect a bounded batch, and release MongoDB leases even after errors.
+
+## GitHub Actions
+
+Scheduled and manually dispatched workflows call the protected reconciliation endpoint. GitHub schedule execution is best-effort and may be delayed. It supplements Vercel Cron; it does not replace protocol finality or on-chain state.
+The currently deployed browser flow uses the v1 Base Sepolia router and the reviewed Gateway adjudicator route. `GatewayRouteRegistry` is additive source code for the multi-contract release and must be deployed, configured, and integrated with a route-aware router before secondary GenLayer contracts are activated. Do not point production traffic at a registry-only deployment.

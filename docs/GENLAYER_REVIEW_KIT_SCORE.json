@@ -1,0 +1,49 @@
+{
+  "submission_id": "local-genlayer-gateway",
+  "decision": "accept",
+  "confidence": "high",
+  "evidence_types": [
+    "local_repository",
+    "intelligent_contract_source",
+    "local_tests",
+    "live_app",
+    "deployed_contracts",
+    "testnet_transaction_traces",
+    "twenty_job_phase_gate"
+  ],
+  "builder_signal": true,
+  "reasoning": "All material evidence is directly reviewable. GenLayer is the core neutral adjudicator for a contested Base escrow, the Bradbury Intelligent Contract performs external evidence retrieval and substantive validator re-evaluation, the application uses real GenLayerJS reads/writes and finalized receipt handling, and the deployed testnet flow passed a fresh smoke plus a 20-job gate with 19 expected finalized settlements. The proposal is accepted as a strong testnet Project, not as trustless or mainnet-ready infrastructure. The remaining caps are the operational result-attestor trust assumption, the deployed Base sender's stale 200k LayerZero option, serverless liveness limits, and one Bradbury finalized-no-result outlier.",
+  "staff_reply": "Strong GenLayer-native testnet project. The deployed round trip and 19/20 correct settlement gate resolve the previous evidence gap. Keep the mainnet claim constrained until Base can verify GenLayer finality cryptographically or the attestor model is formally accepted and audited, update the deployed LayerZero gas option, and define recovery for finalized transactions with no stored result.",
+  "needs_parent_review": false,
+  "points": 40,
+  "evidence_access": {
+    "local_repository": "reviewed",
+    "intelligent_contract": "reviewed",
+    "live_app": "reviewed",
+    "deployed_contracts": "reviewed",
+    "official_testnet_round_trip": "reviewed",
+    "twenty_job_phase_gate": "reviewed"
+  },
+  "rubric_review": {
+    "gate_failures": [],
+    "sections": {
+      "genlayer_fit": {
+        "score": 5,
+        "reason": "GenLayer consensus decides a disputed, value-bearing escrow outcome from current external evidence; removing GenLayer removes the product's neutral trust model.",
+        "blocking_reason": ""
+      },
+      "contract_quality": {
+        "score": 4,
+        "reason": "The pinned Intelligent Contract recomputes commitments, fetches and hashes evidence, constrains outputs, and validators independently re-evaluate the meaningful decision and body hash.",
+        "blocking_reason": "A 5 requires a stronger end-to-end finality proof and a defined recovery path for the observed finalized transaction with no stored result."
+      },
+      "engineering": {
+        "score": 4,
+        "reason": "The repository integrates contracts, GenLayerJS, UI/API, MongoDB, Vercel, LayerZero, attestation, retries, checkpoints, deployment verification, and a successful 20-job live gate.",
+        "blocking_reason": "A 5 requires durable production relay infrastructure, the on-chain LayerZero gas update, independent audit evidence, and removal or formal acceptance of the attestor trust assumption."
+      }
+    },
+    "extras": [],
+    "overall_reason": "High GenLayer fit and strong live testnet engineering with 19/20 correct settlements. Accept as a Project with explicit reservations; do not represent it as trustless or mainnet production-ready. Point calculation: (5/5) * ((2*4 + 2*4)/20) * 50 = 40."
+  }
+}

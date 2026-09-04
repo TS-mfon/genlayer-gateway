@@ -1,0 +1,123 @@
+# Bring your own Intelligent Contract
+
+Developers do not need to migrate their application to GenLayer. They choose one of three integration paths depending on whether the existing Gateway adjudicator already expresses the judgment they need.
+
+## Path 1 — use the shared adjudicator
+
+Use the protocol-operated `gateway-adjudicator` route when your application can express the decision as:
+
+- a bounded question;
+- immutable policy rules;
+- a content-addressed evidence manifest; and
+- the result enum `PASS`, `FAIL`, or `UNDETERMINED`.
+
+Your users remain on Base Sepolia. Your origin contract holds funds or application state, calls Gateway, and implements the authenticated callback. Gateway operates the GenLayer-side contract and transport route.
+
+This is the fastest path and the one demonstrated by `/test-console`.
+
+## Path 2 — request a reviewed managed route
+
+Deploy your own GenLayer Intelligent Contract when you need custom state, a different method, a domain-specific result, or specialized validator logic. Then submit a route package containing:
+
+```text
+contract address and deployment transaction
+pinned GenVM dependency
+public method and typed arguments
+result type and canonical encoding
+source authorization rules
+equivalence / validator strategy
+failure and UNDETERMINED semantics
+direct-mode tests
+Bradbury integration evidence
+origin callback example
+```
+
+Gateway maintainers review the contract and implement a destination-specific adapter. The adapter encodes requests, submits the GenLayer transaction, waits for finalization, decodes stored results, constructs the return envelope, and rejects malformed or mismatched output.
+
+The route stays visible but unavailable until its executor and phase-gate evidence are complete.
+
+## Path 3 — self-host the adapter
+
+Advanced teams may operate their own relay and route adapter while reusing the protocol envelopes and origin contracts. This provides operational control but also transfers responsibility for:
+
+- relayer availability and key management;
+- route review and schema safety;
+- GenLayer transaction funding;
+- finality authentication;
+- retries and reconciliation;
+- monitoring and incident response; and
+- independent security review.
+
+A self-hosted adapter must not claim compatibility with the managed Gateway route unless its request commitment, trusted remotes, result envelope, and callback verification match the deployed protocol version.
+
+## Minimum Intelligent Contract behavior
+
+Gateway does not require every Intelligent Contract to share one Python signature. It requires the route adapter to define an unambiguous mapping between the origin request and the destination method.
+
+Conceptually:
+
+```python
+@gl.public.write
+def adjudicate(request_id, question, policy_uri, policy_hash, evidence_uri, evidence_hash):
+    # Authenticate the configured submitter.
+    # Recompute or validate request commitments.
+    # Fetch versioned evidence.
+    # Produce a constrained result under validator consensus.
+    # Store a result retrievable by request_id.
+    ...
+
+@gl.public.view
+def get_result(request_id):
+    ...
+```
+
+The actual route may use another method or result type, but it must expose stable storage or another verifiable finalized-result retrieval mechanism.
+
+## Origin application contract
+
+The origin application owns consequences. Gateway should not own your escrow, insurance reserve, governance state, or marketplace funds.
+
+```solidity
+function requestJudgment(bytes32 policyHash, bytes32 evidenceHash) external payable {
+    requestId = gateway.request{value: msg.value}(
+        callback,
+        expiry,
+        questionHash,
+        policyHash,
+        evidenceHash
+    );
+}
+
+function onGatewayResult(bytes32 requestId, uint8 decision) external onlyGateway {
+    if (decision == PASS) {
+        _executeApplicationOutcome();
+    } else if (decision == FAIL) {
+        _executeFailureOutcome();
+    } else {
+        _enterRecoverableReviewState();
+    }
+}
+```
+
+Treat this as an integration sketch, not a drop-in ABI. Use the versioned interfaces in the repository for the deployed route.
+
+## Security requirements
+
+Never build a route that:
+
+- accepts a browser-supplied destination as trusted;
+- lets untrusted evidence become system instructions;
+- treats relay JSON as the authoritative decision;
+- omits the route ID from request/result commitments;
+- settles funds before authenticated finalization;
+- assumes mutable URLs are immutable evidence;
+- retries by creating a different semantic request; or
+- collapses unavailable evidence into `PASS` or `FAIL`.
+
+## What changes for another origin chain
+
+Supporting another EVM chain requires a deployed origin adapter, authenticated transport configuration, fee quoting, a result receiver, and integration tests for that chain. The GenLayer route can remain unchanged when the request envelope and destination authorization support the new origin.
+
+Non-EVM origins require a chain-native adapter that produces the same semantic request commitment and verifies the same result envelope.
+
+Continue with the [Route model](/docs/routes), [Protocol lifecycle](/docs/protocol), and [Security model](/docs/security).

@@ -1,0 +1,44 @@
+# GenLayer Gateway
+
+GenLayer Gateway is a testnet interchain adjudication protocol. It lets a Base Sepolia application submit a structured question, immutable policy, and versioned evidence manifest to a GenLayer Intelligent Contract. The finalized decision returns to Base and may trigger an application callback.
+
+> **Testnet status:** version 0.1.0 is not audited and rejects non-Base-Sepolia origin deployments.
+
+## Why it exists
+
+Deterministic smart contracts enforce rules well, but cannot reliably interpret repositories, documents, agent output, or ambiguous evidence. Gateway separates three responsibilities:
+
+| Layer | Responsibility |
+| --- | --- |
+| Origin application | Holds funds and defines consequences |
+| Transport | Carries authenticated bytes |
+| GenLayer | Evaluates evidence and finalizes judgment |
+
+The API and database index the lifecycle. They never decide whether work passed.
+
+## First application
+
+The included `AgentEscrow` lets a client lock funds on Base Sepolia, receive worker evidence, ask GenLayer to verify the work, and release or refund after an authenticated verdict. `UNDETERMINED` enters a recoverable application state rather than guessing.
+
+## Core guarantees
+
+- Exact `0.001 ETH` request prepayment.
+- Domain-separated request IDs.
+- Monotonic application nonces.
+- Evidence and policy commitments.
+- Authenticated result entry point.
+- One-time result finalization.
+- Retryable, idempotent callback delivery.
+- Explicit timeout and undetermined states.
+
+## Use the test application
+
+The web app is organized around two roles:
+
+- **Client / Post a job** at `/create-job`: connect a Base Sepolia wallet, specify the worker, and fund the escrow.
+- **Client dashboard** at `/dashboard/client`: see jobs created in the current browser and open each job's detail page.
+- **Worker dashboard** at `/dashboard/worker`: see live jobs available in the current browser and open their detail pages.
+- **Job detail** at `/jobs/:id`: see the human-readable progress rail `Created → Claimed → Review → Paid` and the next action.
+- **Request trace** at `/requests/:requestId`: follow Base dispatch, hub delivery, GenLayer adjudication, return delivery, and callback settlement without reading raw JSON.
+
+Created jobs are immediately written to browser storage under `genlayer-gateway.jobs.v1`. This makes the demo resilient to navigation and refresh. The on-chain job ID, request ID, transaction hash, and final callback remain authoritative; browser storage is only a continuity layer for the presentation UI.

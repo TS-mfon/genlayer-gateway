@@ -1,0 +1,93 @@
+{
+  "generatedAt": "2026-09-01T02:36:38.689Z",
+  "status": "deployed-verified-and-phase-gate-passed",
+  "trustModel": {
+    "resultAttestor": "0x2036979EF7f392E659CBa83C1B999bd549B4f54f",
+    "description": "Operational signer assumption; not a cryptographic proof of GenLayer finality.",
+    "mainnetReady": false
+  },
+  "networks": {
+    "baseSepolia": {
+      "chainId": 84532,
+      "layerZeroEid": 40245,
+      "layerZeroEndpointV2": "0x6EDCE65403992e310A62460808c4b910D972f10f",
+      "contracts": {
+        "LayerZeroGatewaySender": "0x9c6d6a8178fccb3e2adabe591ad77bbfe31b52dc",
+        "GatewayRouter": "0x18c9495f1fcdd86fcf6e102338d8b567e867dc7f",
+        "LayerZeroResultReceiver": "0x0527462e78cc4839a64542436abe85f9eaced7d5",
+        "AgentEscrow": "0xa4ae62a8fd810b0b9c53edf4d57bc8968a8517cb"
+      },
+      "deploymentTransaction": "0x5c4ce1385f3d2e31f0a2c412071bfdefcffad3d802355d71bf2a1ad762d2a947",
+      "configurationTransaction": "0x0709bda6f9bb5a929015695b6b55b7c8e6a92436fd68b24f869c4086d4b37942",
+      "ownershipTransaction": "0x4f4d91cc97dba5687133ed885931211d80195e2d820bf773a9a1762e1ce39b6c"
+    },
+    "arbitrumSepolia": {
+      "chainId": 421614,
+      "layerZeroEid": 40231,
+      "layerZeroEndpointV2": "0x6EDCE65403992e310A62460808c4b910D972f10f",
+      "contracts": {
+        "LayerZeroHubReceiver": "0x26ca0d2d6994bc9e2cacdb7d125778c68fc59e8f",
+        "LayerZeroHubForwarder": "0x65bcaae5802adbc92d7959583a316831f1c4b77b"
+      },
+      "deploymentTransaction": "0xfe81f760a388aa21cbee3f887b3ac74438886c230c41fbbc92fd2b75efa64ed8",
+      "configurationTransaction": "0x6ceef05a28be9b2fe7f0e5ad6b5f8f4a99226a5eccf881c755d054b7712e5c12",
+      "ownershipTransaction": "0xeec7c9e5bf6dc5ec1279a466e9e551111aedebfa58cdd410ab502378fbcbfd60"
+    },
+    "genlayerBradbury": {
+      "chainId": 4221,
+      "contracts": {
+        "GatewayAdjudicator": "0xE2Fe333320E15a81D73BdF02e9c4a4Ee953124C9"
+      },
+      "deploymentTransaction": "0x12bc446d5478ab72c432c641fb92b310187d740c6932c5ac37a0865708346d4a",
+      "configuration": {
+        "authorizedSubmitter": "0xC700a13398acE0BE7B85Cb9b4Cb66297342F1151",
+        "expectedOriginContract": "0x18c9495f1fcdd86fcf6e102338D8b567E867dC7F",
+        "owner": "0x5905c9Dea6Ae52AA0947D8F7F218263889eDfC4E"
+      }
+    }
+  },
+  "protocolOwner": "0x5905c9Dea6Ae52AA0947D8F7F218263889eDfC4E",
+  "verification": {
+    "script": "scripts/verify-live-deployment.mjs",
+    "result": "passed",
+    "verifiedAt": "2026-09-01T02:47:16.464Z"
+  },
+  "smokeTest": {
+    "status": "passed",
+    "report": "phase-gate-results/1788222678333-smoke.json",
+    "submitted": 1,
+    "finalized": 1,
+    "correctSettlements": 1,
+    "requestId": "0xf0a39eeba67e34f725fec111e8fbb555892d9ffa6fcc4d6b2ed92bc5e18a097c",
+    "genlayerTransaction": "0xbc281cbf0aaa9f0ba58bbd18963d19509b5f0a76926aa5dd51da22b6e5bf893f"
+  },
+  "phaseGate": {
+    "status": "passed",
+    "report": "phase-gate-results/1788230198689-aggregate.json",
+    "jobs": 20,
+    "finalized": 19,
+    "correctSettlements": 19,
+    "requiredFinalizedSettlements": 17,
+    "outlier": {
+      "workId": "job-04",
+      "requestId": "0x46ca6797479c8ec510e3cab5e8a25ef2d74a7b15de31149e3bbee2d8f606528d",
+      "genlayerTransaction": "0x58d643516ac7c4cca5f620cd8ac8e9734d80cf64d3666619054691397219f940",
+      "reason": "Bradbury finalized transaction but stored no Intelligent Contract result; fail-closed in ADJUDICATING."
+    }
+  },
+  "hosting": {
+    "provider": "Vercel",
+    "project": "genlayer-gateway",
+    "productionUrl": "https://genlayer-gateway.vercel.app",
+    "deploymentId": "dpl_4NZ9cbZGqdqqPvmUn2ZbyWNHKxTD",
+    "deployedAt": "2026-08-31T23:37:00Z"
+  },
+  "layerZeroDelivery": {
+    "returnOptions": "0x000301001101000000000000000000000000000f4240",
+    "receiveGas": 1000000,
+    "deployedBaseSenderOptions": "0x00030100110100000000000000000000000000030d40",
+    "deployedBaseSenderReceiveGas": 200000,
+    "ownerUpdateRequired": true,
+    "permissionlessRetrySupported": true
+  }
+}

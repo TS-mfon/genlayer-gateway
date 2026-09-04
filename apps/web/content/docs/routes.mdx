@@ -1,0 +1,81 @@
+# Reviewed route model
+
+Gateway is a developer integration layer, not a generic cross-chain contract caller. A **route** is the complete, reviewed definition of one adjudication capability that an application may invoke.
+
+## What the live MVP calls
+
+The current Base Sepolia demo calls the deployed `gateway-adjudicator` route on GenLayer Bradbury. That route points to the protocol-operated `GatewayAdjudicator` Intelligent Contract and exposes one bounded capability: evaluate a work-verification request and return `PASS`, `FAIL`, or `UNDETERMINED`.
+
+```text
+Base application
+  → GatewayRouter
+  → LayerZero V2 origin sender
+  → Arbitrum Sepolia hub
+  → reviewed gateway-adjudicator route
+  → GatewayAdjudicator on GenLayer Bradbury
+  → finalized result
+  → attested return route
+  → Base result receiver
+  → application callback
+```
+
+The application does not deploy a GenLayer contract for this default use case. It integrates the origin Gateway interface and sends typed work-verification arguments to the existing reviewed route.
+
+## Why a route is more than an address
+
+A destination address alone does not define a safe integration. Every active route binds:
+
+| Field | Security purpose |
+| --- | --- |
+| Stable route ID | Prevents a request from being silently redirected |
+| Origin chain and adapter | Defines where authenticated requests may start |
+| Destination chain and contract | Identifies the reviewed Intelligent Contract |
+| Allowed method | Prevents arbitrary destination execution |
+| Argument schema | Defines exactly how request bytes are encoded |
+| Result schema | Defines exactly how finalized bytes are decoded |
+| Callback policy | Limits where and how the origin application is called |
+| Trust model | Discloses how the result is authenticated on return |
+| Fee and timeout policy | Defines economic and recovery behavior |
+| Executor readiness | Proves the relay implements this route, not only its metadata |
+
+The route catalogue at `/routes`, `GET /api/v1/routes`, and `GET /api/v1/routes/:routeId` exposes these bindings. A route is interactive only when its profile is active **and** the relay contains its tested typed executor.
+
+## Request selection
+
+API clients select a reviewed route by stable ID:
+
+```json
+{
+  "routeId": "gateway-adjudicator",
+  "originChainId": 84532,
+  "question": "Did the submitted work satisfy every mandatory requirement?",
+  "policyUri": "https://example.com/policies/job-42.json",
+  "policyHash": "0x...",
+  "evidenceUri": "https://example.com/evidence/job-42.json",
+  "evidenceHash": "0x...",
+  "callback": "0x..."
+}
+```
+
+Omitting `routeId` selects `gateway-adjudicator` for backward compatibility. The selected route is also included in signed API attribution. A signature created for one route cannot be reused as attribution for another route.
+
+## Route activation gate
+
+A profile must remain paused until all of the following exist:
+
+1. A deployed and reviewed GenLayer Intelligent Contract.
+2. A deterministic typed request encoder.
+3. A strict finalized-result decoder.
+4. Destination authorization and source validation.
+5. Replay protection and idempotent callback behavior.
+6. Timeout, retry, and `UNDETERMINED` handling.
+7. Unit, direct-mode, and testnet integration coverage.
+8. A successful smoke test and a new phase gate for that exact route version.
+
+Publishing JSON metadata does not satisfy this gate. The server deliberately reports profiles without executors as unavailable.
+
+## Current trust boundary
+
+The testnet return path uses a threshold attestor quorum. This prevents an ordinary relay from changing a result without the required signatures, but it is still an operational trust assumption—not a destination-verifiable proof of GenLayer finality. Applications must not use the current route for mainnet funds.
+
+See [Custom contracts](/docs/adapters) for the three supported onboarding paths.

@@ -1,0 +1,68 @@
+# Protocol lifecycle
+
+## Request envelope
+
+The origin request binds protocol version, chain, router, application, callback, nonce, expiry, question hash, policy hash, and evidence hash.
+
+```text
+requestId = keccak256(
+  version,
+  chainId,
+  router,
+  originApplication,
+  callback,
+  nonce,
+  expiry,
+  questionHash,
+  policyHash,
+  evidenceHash
+)
+```
+
+## State machine
+
+```text
+CREATED → DISPATCHED → DELIVERED → ADJUDICATING → FINALIZED
+        → RETURN_DISPATCHED → RETURNED → CALLBACK_PENDING
+        → CALLBACK_EXECUTED
+```
+
+Operational failures may enter `FAILED` or `TIMED_OUT`. Retrying an operation never changes the request commitment or finalized verdict.
+
+## Verdicts
+
+- `PASS`: evidence affirmatively satisfies every mandatory policy rule.
+- `FAIL`: evidence affirmatively violates at least one mandatory rule.
+- `UNDETERMINED`: evidence is insufficient, unavailable, contradictory, mutable, or unsafe to interpret.
+
+## Evidence rules
+
+Prefer immutable references:
+
+- Git commit SHA rather than a branch.
+- Transaction hash and block number rather than current state.
+- Content digest rather than a mutable file URL.
+- Release or artifact checksum rather than a web page claim.
+
+Large repositories and artifacts are not placed in the interchain payload. The payload carries a versioned manifest and commitments.
+
+## Gateway as a multi-contract relay
+
+The escrow demo uses one GatewayAdjudicator contract, but the protocol boundary is intentionally broader. A future caller can select a registered GenLayer destination contract and method through a typed route profile rather than hard-coding Gateway's own adjudicator.
+
+A production route profile should bind:
+
+```text
+source chain + origin adapter
+GenLayer chain + destination contract
+allowed method and argument schema
+origin sender and callback policy
+transport security module / trusted remote
+fee and timeout policy
+```
+
+The implementation represents these profiles as validated `GatewayRoute` records. Multiple profiles may coexist, but each remains an explicit allowlist entry. A caller selects a route by stable ID; it never supplies a free-form destination address or method to the trusted relay. The current browser escrow flow still uses the default `gateway-adjudicator` profile, while additional contracts require destination-specific typed encoding, result decoding, and testnet evidence before activation.
+
+The repository also contains an additive `GatewayRouteRegistry` contract. It is the on-chain source-of-truth candidate for the next router version, but it is not connected to the deployed v1 escrow route. This deliberate separation avoids changing the live testnet commitment format without a migration, replay analysis, and a fresh end-to-end gate.
+
+The relay may transport bytes and reconcile lifecycle state, but it must not decide which contract result is correct. Destination contract authorization, result schema, replay protection, and callback authentication stay enforced at the protocol boundary. Base Sepolia is the first supported origin; additional origin adapters can implement the same request/result envelope without changing the client application API.

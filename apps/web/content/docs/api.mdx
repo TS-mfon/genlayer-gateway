@@ -1,0 +1,65 @@
+# API reference
+
+All endpoints are versioned under `/api/v1`.
+
+## Register request
+
+`POST /api/v1/requests`
+
+Registers a prepaid Base Sepolia request only after the API verifies the successful router transaction and `RequestDispatched` event.
+
+Required fields include `requestId`, requester, origin contract, callback, question, policy, evidence manifest, nonce, expiry, and transaction hash. `routeId` is optional for backward compatibility and defaults to `gateway-adjudicator`; when supplied, it must refer to an `ACTIVE` reviewed route with an implemented relay executor. An optional signature may add application-level attribution, but the on-chain transaction is the admission gate.
+
+The endpoint rejects:
+
+- malformed addresses or digests;
+- unsupported chain IDs;
+- expired requests;
+- invalid signatures;
+- reused requester nonces;
+- duplicate request IDs.
+
+## Get request
+
+`GET /api/v1/requests/:requestId`
+
+Returns indexed lifecycle events, attempts, timestamps, and any finalized result. Operational data must be independently verified against chain state before financial use.
+
+## Get result
+
+`GET /api/v1/requests/:requestId/result`
+
+## List reviewed routes
+
+`GET /api/v1/routes`
+
+Returns the GenLayer destination contracts and method profiles approved for this Gateway deployment. The route list is descriptive and does not grant arbitrary callers permission to invoke a contract. A route must bind its origin chain, destination chain, destination contract, method, result schema, lifecycle policy, and trust model.
+
+## Get one reviewed route
+
+`GET /api/v1/routes/:routeId`
+
+Returns one exact route profile plus its `executorReady` status. Use this endpoint to pin the route metadata used by an integration. A `404 ROUTE_NOT_FOUND` response means the route is not configured for this Gateway deployment; it must not be replaced with a browser-supplied destination address.
+
+The current testnet deployment exposes the Gateway work adjudicator. Supporting additional Intelligent Contracts requires a reviewed route profile and a relay/receiver implementation that validates its typed arguments and result schema; callers must never be able to substitute an arbitrary destination address in an existing trusted route.
+
+Route profiles are configured server-side with `GENLAYER_ROUTES_JSON`. Each profile must include a stable route ID, origin and destination chain IDs, the exact GenLayer destination contract, allowed method, argument schema, result schema, status, and documented trust model. The API currently filters profiles to Base Sepolia (`84532`) → GenLayer Bradbury (`4221`). This is an allowlist and validation boundary, not arbitrary remote contract execution: activating a second profile also requires destination-specific typed encoding, result decoding, authorization, replay handling, and integration tests. A descriptive profile without an executor is rejected at request admission.
+
+Returns `409 RESULT_NOT_FINALIZED` until a result has been indexed.
+
+## Retry
+
+`POST /api/v1/requests/:requestId/retry`
+
+Queues a permissionless reconciliation attempt. It cannot create or modify a verdict.
+
+## Reconcile
+
+`GET|POST /api/v1/reconcile`
+
+Requires `Authorization: Bearer $RECONCILE_SECRET`. Used by Vercel Cron and GitHub Actions to reconcile MongoDB with Base Sepolia.
+
+## Health and configuration
+
+- `GET /api/v1/health`
+- `GET /api/v1/config`

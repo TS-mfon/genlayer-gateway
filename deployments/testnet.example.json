@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-08-29T00:00:00.000Z",
+  "status": "template-not-deployed",
+  "baseSepolia": {
+    "chainId": 84532,
+    "layerZeroEid": null,
+    "layerZeroEndpoint": null,
+    "gatewaySender": null,
+    "gatewayRouter": null,
+    "resultReceiver": null,
+    "agentEscrow": null,
+    "deploymentBlock": null
+  },
+  "hub": {
+    "chainId": null,
+    "layerZeroEid": null,
+    "layerZeroEndpoint": null,
+    "receiver": null,
+    "forwarder": null,
+    "deploymentBlock": null
+  },
+  "genLayer": {
+    "network": "testnet-bradbury",
+    "chainId": 61998,
+    "adjudicator": null,
+    "deploymentTransaction": null
+  }
+}
