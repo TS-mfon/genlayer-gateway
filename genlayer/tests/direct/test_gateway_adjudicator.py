@@ -7,6 +7,7 @@ POLICY_HASH = "0x65cd8201a8fc7a96b58b9fec1de083fd733d2d1a562914d010a7186af4768f6
 ORIGIN = "0x" + "44" * 20
 REQUESTER = "0x" + "55" * 20
 CALLBACK = "0x" + "66" * 20
+GENVM_TEST_VERSION = "v0.2.16"
 
 
 def deploy(direct_deploy, submitter):
@@ -15,6 +16,7 @@ def deploy(direct_deploy, submitter):
         "0x" + submitter.hex(),
         ORIGIN,
         "0x" + submitter.hex(),
+        sdk_version=GENVM_TEST_VERSION,
     )
 
 
