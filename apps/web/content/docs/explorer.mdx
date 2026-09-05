@@ -1,0 +1,39 @@
+# Explorer guide
+
+The Explorer is a read-only observatory for Gateway requests. It combines the indexed lifecycle with a direct read from the configured GenLayer route when the route supports one.
+
+## Data sources
+
+Every value is labeled by its source:
+
+- **Indexed** — Gateway's MongoDB-backed operational projection. Useful for search and lifecycle history, but not the authority for a verdict.
+- **GenLayer direct** — a server-side read of the reviewed Intelligent Contract, currently `GatewayAdjudicator.get_result(request_id)`.
+- **Comparison** — a derived check that the indexed and direct decision, evidence commitment, and policy commitment agree.
+
+If the two sources disagree, treat the request as unsafe for application use and investigate the route, relay, and result receiver.
+
+## Search and polling
+
+Search accepts a request ID, Base transaction hash, GenLayer transaction hash, LayerZero message ID, or evidence URL. Active records refresh automatically; terminal records stop polling. Refreshing the page is always safe and never submits a transaction.
+
+A request can be visible before it has a result. `CREATED`, `DISPATCHED`, `DELIVERED`, and `ADJUDICATING` are in-flight states. `FINALIZED` means the indexed Gateway path observed a result, not that the browser should skip origin-chain verification.
+
+## Fail-closed states
+
+The explorer intentionally distinguishes:
+
+- **Pending** — the GenLayer transaction has not finalized.
+- **No result** — the GenLayer transaction finalized but the Intelligent Contract returned no stored result. Gateway does not invent a verdict or settle funds.
+- **Unavailable** — the direct reader or RPC could not verify state.
+- **Mismatch** — indexed and direct values differ. Do not use either value as an application authority until resolved.
+
+## What to verify before relying on a result
+
+1. Confirm the request ID and route ID are the ones your origin contract created.
+2. Confirm the origin transaction and request commitments.
+3. Confirm the destination contract is the reviewed contract for that route.
+4. Confirm the direct GenLayer result matches the request, evidence, and policy commitments.
+5. Confirm the result receiver and callback transaction on the origin chain.
+6. Account for the current quorum-attestor trust assumption: the return path is not yet a native proof of GenLayer finality.
+
+The Explorer is an inspection tool. It does not replace an origin-chain verifier in a financial application.

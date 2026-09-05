@@ -10,7 +10,7 @@ The application does not migrate to GenLayer. Its users do not switch networks o
 
 ## Live Testnet Status
 
-As of September 1, 2026:
+As of September 4, 2026:
 
 - Base Sepolia, Arbitrum Sepolia, and GenLayer Bradbury deployments are live and read-back verified.
 - The Vercel testnet application is live at `https://genlayer-gateway.vercel.app` with MongoDB-backed API, evidence, health, and reconciliation routes.
@@ -23,6 +23,7 @@ See `docs/LIVE_DEPLOYMENT_REPORT.md`, `docs/TESTNET_PHASE_GATE.md`, and `deploym
 ## Contents
 
 - [Problem](#problem)
+- [Integration modes](#integration-modes)
 - [Protocol design](#protocol-design)
 - [Trust model](#trust-model)
 - [Repository layout](#repository-layout)
@@ -40,7 +41,7 @@ See `docs/LIVE_DEPLOYMENT_REPORT.md`, `docs/TESTNET_PHASE_GATE.md`, and `deploym
 - [Security](#security)
 - [Operational recovery](#operational-recovery)
 - [Known limitations](#known-limitations)
-- [Browser test application](#browser-test-application)
+- [Developer observatory](#developer-observatory)
 
 ## Problem
 
@@ -71,6 +72,24 @@ GatewayRouter
     ▼
 Origin application
 ```
+
+## Integration modes
+
+Gateway is designed to bring GenLayer judgment to the chain where an application already lives. It does not require every application developer to deploy an Intelligent Contract or move user funds to GenLayer.
+
+### Shared reviewed route
+
+Use the protocol-operated `gateway-adjudicator` route. Your origin contract calls the Gateway adapter, Gateway invokes the reviewed `GatewayAdjudicator` on GenLayer, and the authenticated result returns to your callback. This is the fastest path and is what the browser MVP demonstrates.
+
+### Managed custom route
+
+Deploy your own Intelligent Contract when your application needs a custom method, state model, output type, or validator strategy. Submit its deployment address, pinned runtime dependencies, typed ABI-like schema, authorization rules, result encoding, failure semantics, tests, and testnet evidence for review. Gateway operators implement and activate a destination-specific executor only after those checks pass. An address alone is never enough.
+
+### Self-hosted route
+
+Operate your own adapter and relay while reusing the Gateway envelopes. You then own destination execution, GenLayer funding, key custody, finality authentication, retry/reconciliation, monitoring, and incident response. The origin contract must still authenticate results and bind them to the original request.
+
+The website's [Integration guide](/docs/integration), [Explorer](/explorer), and [Route documentation](/docs/routes) make these boundaries visible before a developer sends a transaction.
 
 ## Protocol design
 
@@ -212,14 +231,18 @@ The versioned API includes:
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `POST` | `/api/v1/requests` | Register an EIP-712 signed request |
+| `GET` | `/api/v1/requests` | Search the bounded indexed request feed |
 | `GET` | `/api/v1/requests/:id` | Read indexed lifecycle state |
 | `GET` | `/api/v1/requests/:id/result` | Read an indexed finalized result |
+| `GET` | `/api/v1/explorer/:id` | Read the indexed record plus direct GenLayer result comparison |
 | `POST` | `/api/v1/requests/:id/retry` | Queue permissionless reconciliation |
 | `GET/POST` | `/api/v1/reconcile` | Protected bounded reconciliation |
 | `GET` | `/api/v1/health` | Database and service health |
 | `GET` | `/api/v1/config` | Public testnet configuration |
 
 MongoDB stores request metadata, unique requester nonces, lifecycle events, attempts, webhook delivery IDs, and short reconciliation leases. Unique indexes make registration and webhook processing idempotent.
+
+The Explorer labels MongoDB-backed values as indexed and reads the active route's canonical GenLayer result server-side. If the sources disagree or the Intelligent Contract has no result, the Explorer reports the discrepancy and fails closed; it never promotes an operational projection into a verdict.
 
 The API verifies EIP-712 signatures but does not replace the origin-chain transaction. The fixed request fee is enforced by `GatewayRouter`, not by a database flag.
 
@@ -306,18 +329,20 @@ The official integration gate must not use a simulated route.
 
 ## Deployment
 
-Development remains local until explicit authorization to create a GitHub repository.
+The public testnet deployment is already connected to GitHub and Vercel. Reproduce or rotate it with the deployment runbooks under `scripts/` and `docs/` rather than copying secrets into source control. Keep deployment keys, attestor keys, MongoDB credentials, and reconciliation secrets in an encrypted environment or secret manager.
 
-When authorized:
+The safe order is:
 
-1. create the GitHub repository;
-2. configure protected environments and encrypted secrets;
-3. connect Vercel through the GitHub integration;
-4. create separate preview and production-testnet MongoDB databases;
-5. deploy transport, router, escrow, and GenLayer contracts in the documented order;
-6. populate public addresses only after successful verification;
-7. run the 20-job official-testnet gate;
-8. publish only the verified active transport name.
+1. validate the deployment environment;
+2. deploy and configure the transport contracts;
+3. deploy the origin router, result receiver, and application adapter;
+4. deploy and fund the reviewed GenLayer route;
+5. configure trusted remotes, route bindings, and result authority;
+6. perform a zero-value smoke test;
+7. run the official-testnet phase gate;
+8. publish addresses and transaction evidence only after read-back verification.
+
+See [the integration guide](/docs/integration) for the application developer path and `docs/LIVE_DEPLOYMENT_REPORT.md` for the current testnet evidence.
 
 ## Security
 
@@ -346,10 +371,9 @@ GitHub scheduling and Vercel invocation are best-effort. Permissionless retry en
 
 - Testnet-only and unaudited.
 - Fixed fee rather than dynamic economic quoting.
-- No deployment addresses or successful official-testnet round-trip transaction hashes are included yet.
-- The authorized hub relayer can still forge return bytes because Base cannot currently verify a GenLayer finality proof.
+- The current deployment evidence is testnet-only and the result-attestor/quorum return path remains an operational trust assumption; Base does not yet verify a native GenLayer finality proof.
 - Vercel and GitHub scheduled invocations are bounded triggers, not durable worker infrastructure.
-- The required 20 official-testnet jobs with at least 17 correct finalized outcomes have not been executed.
+- The recorded phase gate achieved 19/20 finalized expected decisions and 19/20 correct settlements; the one failed-closed outlier remains documented and must be investigated before any higher-value testnet use.
 - The example adjudicator evaluates one bounded HTTPS evidence document rather than a multi-artifact retrieval graph.
 - No appeal mechanism is included in v0.1.0.
 - No stablecoin billing, subscription, sponsorship, or mainnet treasury management.
@@ -359,27 +383,26 @@ GitHub scheduling and Vercel invocation are best-effort. Permissionless retry en
 
 No license has been selected. Add one only after the project owner explicitly chooses the licensing model.
 
-## Browser test application
+## Developer observatory
 
-The deployed test application is organized around a simple two-party workflow rather than a protocol dashboard:
+The public website is intentionally read-only. It helps developers understand and verify Gateway; it does not connect wallets, create jobs, submit evidence, dispatch requests, or settle funds.
 
 | Route | Use |
 | --- | --- |
-| `/` | Choose Client / Post a Job or Worker / Browse Jobs |
-| `/create-job` | Client creates and funds an escrow job on Base Sepolia |
-| `/dashboard/client` | Client sees jobs created in the current browser |
-| `/dashboard/worker` | Worker sees live task cards in the current browser |
-| `/jobs/:id` | Job details, progress rail, and next action |
-| `/test-console` | Guided two-wallet escrow-to-GenLayer test flow |
-| `/playground` | Compose a reviewed route request and copy integration examples |
-| `/routes` | Reviewed GenLayer route catalogue and executor readiness |
-| `/docs/routes` | Route trust, schema, activation, and selection model |
-| `/docs/adapters` | Shared, managed, and self-hosted custom-contract integration paths |
-| `/docs/ui` | Full browser testing guide |
+| `/` | Product explanation, architecture, and verified testnet evidence summary |
+| `/explorer` | Search and poll indexed Gateway requests |
+| `/explorer/:requestId` | Compare indexed lifecycle data with a direct GenLayer result read |
+| `/evidence` | Inspect deployment, smoke-test, phase-gate, and delivery evidence |
+| `/docs/overview` | Protocol overview and boundaries |
+| `/docs/integration` | Application integration and custom-contract paths |
+| `/docs/routes` | Reviewed route trust, schema, and activation model |
+| `/docs/explorer` | How to interpret indexed, direct, and comparison data |
+| `/docs/evidence` | Evidence methodology and independent verification steps |
+| `/docs/api` | Programmatic API reference |
 
-`GET /api/v1/routes` exposes the reviewed GenLayer destination profiles. The current testnet profile targets `GatewayAdjudicator`; arbitrary destination addresses are not accepted as trusted routes. A future multi-contract release must add typed method arguments, result schemas, and destination-specific verification before exposing additional profiles.
+The developer protocol remains programmatic. An application on Base Sepolia calls the origin adapter, Gateway routes the typed request to a reviewed GenLayer contract, and the result returns to the application's authenticated callback. The browser observatory is only an inspection surface.
 
-A newly created job is immediately persisted under `genlayer-gateway.jobs.v1` in browser storage. This prevents navigation or refresh from making a successful creation appear to disappear. Browser state is only a UI projection: contract state, transaction receipts, request IDs, GenLayer results, and callbacks remain authoritative.
+The legacy browser job, dashboard, playground, and test-console paths redirect to the explorer or integration documentation. They are not part of the supported public UI contract.
 
 ### Gateway beyond the demo adjudicator
 

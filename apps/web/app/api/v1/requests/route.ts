@@ -1,7 +1,7 @@
 import { CreateRequestSchema, DEFAULT_ROUTE_ID, type GatewayRequestRecord } from "@gateway/protocol";
 import { MongoServerError } from "mongodb";
 import { createHash } from "node:crypto";
-import { createRequestRecord } from "@/lib/db/requests";
+import { createRequestRecord, listRequestRecords } from "@/lib/db/requests";
 import { ensureIndexes, getDatabase } from "@/lib/db/mongodb";
 import { verifyGatewayRequestSignature } from "@/lib/protocol/signature";
 import { readOnchainRequest, verifyOnchainRegistration } from "@/lib/protocol/router";
@@ -64,4 +64,21 @@ export async function POST(request: Request) {
     }
     throw error;
   }
+}
+
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const requestedLimit = Number(url.searchParams.get("limit") ?? 25);
+  if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) {
+    return Response.json({ error: "INVALID_LIMIT", detail: "limit must be an integer between 1 and 100" }, { status: 400 });
+  }
+  const records = await listRequestRecords({
+    limit: requestedLimit,
+    query: url.searchParams.get("q") ?? undefined,
+    status: url.searchParams.get("status") ?? undefined,
+    decision: url.searchParams.get("decision") ?? undefined,
+  });
+  return Response.json({ requests: records, count: records.length }, {
+    headers: { "Cache-Control": "public, max-age=10, stale-while-revalidate=30" },
+  });
 }

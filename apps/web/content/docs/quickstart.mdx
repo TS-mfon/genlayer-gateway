@@ -80,17 +80,8 @@ bytes memory arguments = abi.encode(question, policy, evidenceUri);
 );
 ```
 
-The callback must authenticate the deployed Gateway receiver, bind the returned route ID to the request, reject replayed request IDs, and treat `UNDETERMINED` as a recoverable state. The browser playground at `/playground` generates a request preview and a Solidity integration sketch without allowing arbitrary destination execution.
+The callback must authenticate the deployed Gateway receiver, bind the returned route ID to the request, reject replayed request IDs, and treat `UNDETERMINED` as a recoverable state. The read-only observatory at `/explorer` lets you inspect the resulting lifecycle without becoming a transaction sender.
 
-## Test through the browser
+## Inspect through the browser
 
-Open `/create-job` and use the guided flow:
-
-1. Enter a worker wallet address different from the client wallet.
-2. Sign **Create funded job** on Base Sepolia.
-3. Open the job from `/dashboard/client`.
-4. Use the worker wallet to submit evidence on the job detail page or the protocol console.
-5. Return to the client wallet and request GenLayer verification.
-6. Inspect the lifecycle until the decision returns and the escrow settles.
-
-The UI labels wallet responsibility explicitly. The client signs creation and verification; the worker signs evidence; the relay signs only transport-side operational transactions.
+Open `/explorer` to search and inspect recorded requests. The observatory does not connect a wallet or submit a transaction. Use `/docs/integration` for the application-side signing and callback flow, and `/evidence` for the published testnet deployment and phase-gate records.

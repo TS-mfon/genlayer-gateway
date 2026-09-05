@@ -1,0 +1,40 @@
+# Testnet evidence
+
+Gateway publishes its testnet evidence so developers and reviewers can inspect what was actually deployed and exercised rather than relying on a marketing claim.
+
+## Evidence sources
+
+The source-of-truth artifacts are:
+
+- `deployments/testnet.json` — deployment addresses, configuration, trust model, smoke result, phase-gate aggregate, and delivery settings.
+- `docs/LIVE_DEPLOYMENT_REPORT.md` — transaction-level smoke-test and deployment verification narrative.
+- `docs/TESTNET_PHASE_GATE.md` — the 20-job matrix, expected decisions, transaction identifiers, and outlier analysis.
+- `docs/TEST_REPORT.md` — local unit, integration, security, and direct-mode test results.
+- `docs/GENLAYER_REVIEW_KIT_SCORE.json` — the GenLayer fit assessment and its limitations.
+
+The website's [Evidence](/evidence) view renders the deployment artifact and links the most important records. The [Explorer](/explorer) lets you inspect individual request lifecycle data.
+
+## Recorded testnet result
+
+The deployed Base Sepolia → Arbitrum Sepolia → GenLayer Bradbury route completed one smoke test and a 20-job phase gate. The recorded aggregate is:
+
+- smoke test: `1/1` complete round trip;
+- phase gate: `19/20` expected results finalized;
+- phase gate: `19/20` correct Base settlements;
+- threshold: at least `17` finalized correct settlements;
+- outlier: `job-04`, which remained fail-closed because Bradbury finalized the transaction without a stored Intelligent Contract result.
+
+A finalized transaction without a stored result is not treated as a verdict. The reconciler retains the request for review/resubmission and does not settle funds from an absent result.
+
+## How to verify independently
+
+1. Read the route and contract addresses from `deployments/testnet.json`.
+2. Open the deployment and configuration transactions on the relevant testnet explorer.
+3. Open the smoke and phase-gate request IDs in the Gateway Explorer.
+4. Compare the indexed lifecycle with the direct GenLayer result read.
+5. Recompute or independently verify the request, policy, and evidence commitments.
+6. Confirm the callback/settlement transaction on Base Sepolia.
+
+## Limits of this evidence
+
+This evidence proves that the testnet implementation executed the recorded path. It does not prove production safety, economic security, or trustless GenLayer finality. The return path uses quorum-attested operational infrastructure, and the origin chain does not yet verify a native cryptographic proof of GenLayer finality. The contracts and deployment configuration require independent audit before mainnet use.

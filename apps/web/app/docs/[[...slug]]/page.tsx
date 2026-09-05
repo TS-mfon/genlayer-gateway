@@ -6,6 +6,9 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 
 const pages = [
   ["overview", "Overview"],
+  ["integration", "Integration guide"],
+  ["explorer", "Explorer guide"],
+  ["evidence", "Testnet evidence"],
   ["quickstart", "Quick start"],
   ["routes", "Route model"],
   ["adapters", "Custom contracts"],
@@ -14,7 +17,7 @@ const pages = [
   ["security", "Security model"],
   ["testing", "Testing gates"],
   ["deployment", "Deployment"],
-  ["ui", "Test app guide"],
+  ["ui", "Observatory guide"],
 ] as const;
 
 export function generateStaticParams() {

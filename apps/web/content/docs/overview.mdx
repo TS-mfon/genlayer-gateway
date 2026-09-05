@@ -2,6 +2,8 @@
 
 GenLayer Gateway is a testnet interchain adjudication protocol. It lets a Base Sepolia application submit a structured question, immutable policy, and versioned evidence manifest to a GenLayer Intelligent Contract. The finalized decision returns to Base and may trigger an application callback.
 
+The product has two surfaces: a **developer gateway** for integrating reviewed GenLayer capabilities into an existing application, and a **read-only observatory** for inspecting the deployed route and its evidence. The observatory never submits transactions; the escrow implementation remains protocol test coverage, not the public product.
+
 > **Testnet status:** version 0.1.0 is not audited and rejects non-Base-Sepolia origin deployments.
 
 ## Why it exists
@@ -16,9 +18,11 @@ Deterministic smart contracts enforce rules well, but cannot reliably interpret 
 
 The API and database index the lifecycle. They never decide whether work passed.
 
-## First application
+Start with the [Integration guide](/docs/integration) if you are deciding whether to use the shared adjudicator, bring your own Intelligent Contract through a managed route, or operate an adapter yourself.
 
-The included `AgentEscrow` lets a client lock funds on Base Sepolia, receive worker evidence, ask GenLayer to verify the work, and release or refund after an authenticated verdict. `UNDETERMINED` enters a recoverable application state rather than guessing.
+## First reference integration
+
+The included `AgentEscrow` is a reference integration: it locks funds on Base Sepolia, receives worker evidence, asks GenLayer to verify the work, and releases or refunds after an authenticated verdict. `UNDETERMINED` enters a recoverable application state rather than guessing. Developers do not need to use this application contract; they can integrate the Gateway adapter into their own application.
 
 ## Core guarantees
 
@@ -31,14 +35,11 @@ The included `AgentEscrow` lets a client lock funds on Base Sepolia, receive wor
 - Retryable, idempotent callback delivery.
 - Explicit timeout and undetermined states.
 
-## Use the test application
+## Use the observatory
 
-The web app is organized around two roles:
+- **Explorer** at `/explorer`: search indexed request IDs, transactions, LayerZero message IDs, evidence URLs, statuses, and decisions.
+- **Request inspection** at `/explorer/:requestId`: compare indexed lifecycle data with a direct read from the configured GenLayer contract.
+- **Evidence** at `/evidence`: inspect deployed addresses, smoke-test results, phase-gate outcomes, and the documented fail-closed outlier.
+- **Integration docs** at `/docs/integration`: learn how to use the shared route, onboard a custom Intelligent Contract, or self-host an adapter.
 
-- **Client / Post a job** at `/create-job`: connect a Base Sepolia wallet, specify the worker, and fund the escrow.
-- **Client dashboard** at `/dashboard/client`: see jobs created in the current browser and open each job's detail page.
-- **Worker dashboard** at `/dashboard/worker`: see live jobs available in the current browser and open their detail pages.
-- **Job detail** at `/jobs/:id`: see the human-readable progress rail `Created → Claimed → Review → Paid` and the next action.
-- **Request trace** at `/requests/:requestId`: follow Base dispatch, hub delivery, GenLayer adjudication, return delivery, and callback settlement without reading raw JSON.
-
-Created jobs are immediately written to browser storage under `genlayer-gateway.jobs.v1`. This makes the demo resilient to navigation and refresh. The on-chain job ID, request ID, transaction hash, and final callback remain authoritative; browser storage is only a continuity layer for the presentation UI.
+The write APIs and contracts remain available to programmatic developers. The public website has no wallet provider, local job store, or browser transaction workflow.

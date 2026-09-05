@@ -1,0 +1,149 @@
+# Integration guide
+
+## What Gateway is
+
+GenLayer Gateway is an **interchain judgment adapter**. It lets a contract on a chain your application already uses submit a structured decision request to a reviewed GenLayer Intelligent Contract and receive the finalized result on the same origin chain.
+
+Gateway is not a bridge for arbitrary contract calls and it is not an oracle that your frontend should trust. It is a constrained request/response protocol with an explicit route allowlist, typed payloads, authenticated return delivery, replay protection, and a documented trust model.
+
+```text
+Your application contract
+        │ 1. sign + pay request fee
+        ▼
+Origin Gateway adapter on Base
+        │ 2. authenticated transport message
+        ▼
+Gateway route executor
+        │ 3. typed call to the selected IC
+        ▼
+Reviewed GenLayer Intelligent Contract
+        │ 4. validator consensus + finalized result
+        ▼
+Authenticated result receiver on Base
+        │ 5. callback / state transition
+        ▼
+Your application
+```
+
+## Do I deploy a GenLayer contract?
+
+There are three supported modes:
+
+### Shared route — fastest
+
+You **do not** deploy a GenLayer contract. You integrate the origin Gateway interface and select the active `gateway-adjudicator` route. Gateway operates the protocol-owned `GatewayAdjudicator` on GenLayer Bradbury. This route accepts a bounded question, policy, and versioned evidence manifest and returns `PASS`, `FAIL`, or `UNDETERMINED`.
+
+This is the path documented by the Integration guide and observed through `/explorer` and `/evidence`.
+
+### Managed custom route — bring your own IC
+
+You deploy your own Intelligent Contract when you need custom storage, a domain-specific method, a different result type, or specialized validator logic. You then submit a route package to the Gateway operator. The route is not active merely because an address was published: a typed executor, destination authorization, strict decoder, replay handling, direct tests, and a route-specific testnet gate are required first.
+
+Gateway stores and exposes the reviewed route metadata. Your application still calls the origin adapter; it never passes an arbitrary destination address from the browser.
+
+### Self-hosted route — operate the adapter
+
+You can operate your own destination executor and relay while reusing the semantic request/result envelopes. In this mode you own key management, delivery, GenLayer funding, finality authentication, retries, monitoring, and incident response. Do not describe a self-hosted attestor as trustless unless the finality proof is independently verified on the origin chain.
+
+## The minimum integration surface
+
+An origin application needs:
+
+1. A deployed origin adapter for its chain.
+2. A reviewed route ID, not a user-supplied destination address.
+3. A callback contract that authenticates Gateway and is idempotent.
+4. A policy commitment and versioned evidence manifest.
+5. A timeout and recovery policy for delayed, failed, or `UNDETERMINED` requests.
+6. A way to fund the route's request fee and transport execution.
+
+The first supported origin is Base Sepolia (`84532`). Other EVM origins need their own adapter and transport configuration; the GenLayer route can remain unchanged if the semantic envelope and authorization model remain compatible.
+
+## Request lifecycle
+
+### 1. Define the judgment
+
+Write a question that can be answered from the supplied evidence. Write policy as explicit acceptance criteria. Treat evidence as data, not instructions to the adjudicator.
+
+```json
+{
+  "routeId": "gateway-adjudicator",
+  "question": "Did the submitted work satisfy every mandatory requirement?",
+  "policy": "Return PASS only when every requirement is proven. Return UNDETERMINED when evidence is unavailable.",
+  "evidence": {
+    "version": "1",
+    "items": [
+      {
+        "kind": "GITHUB_COMMIT",
+        "uri": "https://github.com/example/project/commit/<commit-sha>",
+        "digest": "0x<keccak256-of-exact-evidence>"
+      }
+    ]
+  }
+}
+```
+
+### 2. Commit the request on the origin chain
+
+The origin contract creates a request ID from the route, caller, callback, nonce, expiry, question commitment, policy commitment, and evidence commitment. It emits the dispatch event and sends the authenticated message through the configured transport.
+
+A browser may help the user compose the request, but the chain transaction is the admission event. The API is an index and operations surface; it is not the source of truth.
+
+### 3. Execute the reviewed route
+
+The route executor maps the request to the exact destination method and argument schema. It rejects unknown route IDs, malformed arguments, unauthorized source messages, replayed nonces, and mismatched request commitments.
+
+### 4. Finalize on GenLayer
+
+The Intelligent Contract evaluates the evidence under its declared validator/equivalence strategy and stores the canonical result. Missing or inconclusive evidence must resolve to `UNDETERMINED`, not a guessed decision.
+
+### 5. Return and apply the result
+
+The result envelope binds the decision to the original request, route, policy hash, evidence hash, origin chain, origin contract, and destination transaction. The origin receiver verifies the configured return authority, rejects replay, stores the result once, and calls the application callback.
+
+Your callback owns the consequence:
+
+```solidity
+function onGatewayResult(bytes32 requestId, uint8 decision) external onlyGateway {
+    if (decision == PASS) {
+        releaseOrContinue(requestId);
+    } else if (decision == FAIL) {
+        refundOrReject(requestId);
+    } else {
+        enterReviewState(requestId);
+    }
+}
+```
+
+The callback must not assume that a result will arrive quickly or exactly once.
+
+## Route selection and custom contracts
+
+Fetch the route catalogue from `GET /api/v1/routes` and pin the exact route metadata used by your integration. For each custom contract, provide:
+
+- GenLayer deployment address and deployment transaction;
+- pinned GenVM runner/dependency versions;
+- public method and canonical argument encoding;
+- canonical result encoding and strict decoder;
+- source authorization and replay behavior;
+- validator/equivalence strategy;
+- evidence and failure semantics;
+- direct-mode and integration tests;
+- callback example and timeout behavior.
+
+A route profile with no tested executor is intentionally unavailable. Never “work around” that state by allowing a frontend to supply a different destination.
+
+## Operational verification
+
+Use the API for observability, not authority:
+
+- `POST /api/v1/requests` registers a request after its origin transaction is confirmed.
+- `GET /api/v1/requests/:requestId` reads the indexed lifecycle.
+- `GET /api/v1/requests/:requestId/result` reads an indexed result after finalization.
+- `POST /api/v1/requests/:requestId/retry` requests reconciliation and cannot invent a verdict.
+- `GET|POST /api/v1/reconcile` repairs indexing and is protected by `RECONCILE_SECRET`.
+
+Before settling funds, independently verify the origin receipt, route binding, result receiver authorization, result commitment, and callback event. MongoDB, Vercel, and a relay dashboard may be unavailable without changing the protocol's on-chain state.
+
+## Testnet trust disclosure
+
+The current testnet return path uses quorum-attested result delivery. Multiple independently controlled attestors reduce single-key risk, but the origin chain does not yet verify a native cryptographic proof of GenLayer finality. This is an operational trust assumption. Do not use the current route for mainnet funds until a destination-verifiable finality proof, formally accepted threshold model, or audited equivalent replaces this boundary.

@@ -25,17 +25,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <img src="/icons/favicon.svg" alt="" width="34" height="34" />
               <span>GenLayer Gateway</span>
             </Link>
-            <nav aria-label="Primary navigation">
-              <Link href="/create-job">Post a job</Link>
-              <Link href="/dashboard/client">Client dashboard</Link>
-              <Link href="/dashboard/worker">Worker dashboard</Link>
-              <Link href="/test-console">Test console</Link>
-              <Link href="/playground">Developer playground</Link>
-              <Link href="/routes">Routes</Link>
+            <nav className="product-nav" aria-label="Product navigation">
+              <Link href="/explorer">Explorer</Link>
+              <Link href="/docs/routes">Routes</Link>
               <Link href="/docs/overview">Docs</Link>
-              <a href="/api/v1/health">API health</a>
+              <Link href="/evidence">Evidence</Link>
             </nav>
-            <span className="network-pill">Base Sepolia · testnet</span>
+            <div className="topbar-actions">
+              <span className="network-pill">Base Sepolia · testnet</span>
+              <Link className="button primary topbar-cta" href="/docs/integration">Integrate <span aria-hidden="true">↗</span></Link>
+            </div>
           </header>
           {children}
           <footer>

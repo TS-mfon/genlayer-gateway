@@ -13,6 +13,37 @@ export async function getRequestRecord(requestId: string) {
   return database.collection<GatewayRequestRecord>("requests").findOne({ requestId });
 }
 
+export async function listRequestRecords(options: {
+  limit?: number;
+  query?: string;
+  status?: string;
+  decision?: string;
+} = {}) {
+  const database = await getDatabase();
+  const limit = Math.min(Math.max(options.limit ?? 25, 1), 100);
+  const filters: Record<string, unknown>[] = [];
+  if (options.query) {
+    const escaped = options.query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filters.push({ $or: [
+      { requestId: { $regex: escaped, $options: "i" } },
+      { "request.transactionHash": { $regex: escaped, $options: "i" } },
+      { "request.evidence.items.uri": { $regex: escaped, $options: "i" } },
+      { "bridge.inboundMessageId": { $regex: escaped, $options: "i" } },
+      { "bridge.genlayerTransaction": { $regex: escaped, $options: "i" } },
+    ] });
+  }
+  if (options.status) filters.push({ status: options.status });
+  if (options.decision) filters.push({ "result.decision": options.decision });
+  const filter = filters.length ? { $and: filters } : {};
+  return database
+    .collection<GatewayRequestRecord>("requests")
+    .find(filter)
+    .sort({ updatedAt: -1 })
+    .limit(limit)
+    .project({ _id: 0 })
+    .toArray();
+}
+
 export async function transitionRequest(
   requestId: string,
   to: RequestStatus,

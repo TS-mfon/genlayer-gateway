@@ -19,6 +19,16 @@ The endpoint rejects:
 - reused requester nonces;
 - duplicate request IDs.
 
+## List requests
+
+`GET /api/v1/requests`
+
+Returns a bounded, newest-first list for the read-only Explorer. Optional query parameters are `q`, `status`, `decision`, and `limit` (`1`–`100`). Search matches request IDs, Base transaction hashes, GenLayer transaction hashes, LayerZero inbound message IDs, evidence URLs, and indexed bridge fields.
+
+This endpoint is an operational index. It does not make a result authoritative and it does not invoke an arbitrary destination contract. Use `/api/v1/explorer/:requestId` to add the route-aware direct GenLayer read and indexed/direct comparison.
+
+Invalid limits return `400 INVALID_LIMIT`; unknown or unsupported route IDs never become dynamic contract calls.
+
 ## Get request
 
 `GET /api/v1/requests/:requestId`
@@ -28,6 +38,12 @@ Returns indexed lifecycle events, attempts, timestamps, and any finalized result
 ## Get result
 
 `GET /api/v1/requests/:requestId/result`
+
+## Explorer inspection
+
+`GET /api/v1/explorer/:requestId`
+
+Validates a request ID, loads the indexed request, reads the configured reviewed route's canonical result method, and returns `direct`, `comparison`, and source metadata. The initial `gateway-adjudicator` adapter reads `GatewayAdjudicator.get_result(request_id)` on GenLayer Bradbury. A direct read can be `FINALIZED`, `PENDING`, `NO_RESULT`, or `UNAVAILABLE`; an empty result is never converted into a decision.
 
 ## List reviewed routes
 
