@@ -105,6 +105,24 @@ describe("reviewed gateway routes", () => {
     expect(body.note).toContain("not automatically trusted");
   });
 
+  it("returns the complete read-only catalogue shape used by the Explorer", async () => {
+    process.env.GENLAYER_GATEWAY_ADDRESS = "0x2222222222222222222222222222222222222222";
+    const response = await GET();
+    const body = await response.json();
+    expect(body.routes[0]).toEqual(expect.objectContaining({
+      id: "gateway-adjudicator",
+      label: expect.any(String),
+      destinationChainId: 4221,
+      destinationContract: process.env.GENLAYER_GATEWAY_ADDRESS,
+      method: "adjudicate",
+      argumentSchema: "GatewayAdjudicateArgsV1",
+      resultSchema: "GatewayStoredResultV1",
+      status: "ACTIVE",
+      trustModel: "THRESHOLD_ATTESTORS",
+      executorReady: true,
+    }));
+  });
+
   it("keeps the default route profile compatible with existing callers", () => {
     process.env.GENLAYER_GATEWAY_ADDRESS = "0x2222222222222222222222222222222222222222";
     expect(configuredRoutes()[0]).toMatchObject({ id: "gateway-adjudicator", argumentSchema: "GatewayAdjudicateArgsV1" });

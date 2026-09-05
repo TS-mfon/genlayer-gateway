@@ -79,7 +79,7 @@ Gateway is designed to bring GenLayer judgment to the chain where an application
 
 ### Shared reviewed route
 
-Use the protocol-operated `gateway-adjudicator` route. Your origin contract calls the Gateway adapter, Gateway invokes the reviewed `GatewayAdjudicator` on GenLayer, and the authenticated result returns to your callback. This is the fastest path and is what the browser MVP demonstrates.
+Use the protocol-operated `gateway-adjudicator` route. Your origin contract calls the Gateway adapter, Gateway invokes the reviewed `GatewayAdjudicator` on GenLayer, and the authenticated result returns to your callback. This is the fastest path and is the route documented and inspected by the browser observatory.
 
 ### Managed custom route
 
@@ -390,7 +390,7 @@ The public website is intentionally read-only. It helps developers understand an
 | Route | Use |
 | --- | --- |
 | `/` | Product explanation, architecture, and verified testnet evidence summary |
-| `/explorer` | Search and poll indexed Gateway requests |
+| `/explorer` | Search and poll indexed Gateway requests; inspect reviewed route profiles |
 | `/explorer/:requestId` | Compare indexed lifecycle data with a direct GenLayer result read |
 | `/evidence` | Inspect deployment, smoke-test, phase-gate, and delivery evidence |
 | `/docs/overview` | Protocol overview and boundaries |
@@ -399,10 +399,11 @@ The public website is intentionally read-only. It helps developers understand an
 | `/docs/explorer` | How to interpret indexed, direct, and comparison data |
 | `/docs/evidence` | Evidence methodology and independent verification steps |
 | `/docs/api` | Programmatic API reference |
+| `/docs/custom-contracts` | Multi-Intelligent-Contract onboarding and route package requirements |
 
 The developer protocol remains programmatic. An application on Base Sepolia calls the origin adapter, Gateway routes the typed request to a reviewed GenLayer contract, and the result returns to the application's authenticated callback. The browser observatory is only an inspection surface.
 
-The legacy browser job, dashboard, playground, and test-console paths redirect to the explorer or integration documentation. They are not part of the supported public UI contract.
+The legacy browser job, dashboard, playground, and test-console paths are intentionally absent from the supported public UI contract. Integrating applications own wallet actions, request creation, evidence submission, callbacks, and settlement; the Gateway website only explains and inspects those flows.
 
 ### Gateway beyond the demo adjudicator
 

@@ -38,7 +38,7 @@ A destination address alone does not define a safe integration. Every active rou
 | Fee and timeout policy | Defines economic and recovery behavior |
 | Executor readiness | Proves the relay implements this route, not only its metadata |
 
-The route catalogue at `/routes`, `GET /api/v1/routes`, and `GET /api/v1/routes/:routeId` exposes these bindings. A route is interactive only when its profile is active **and** the relay contains its tested typed executor.
+The route catalogue is exposed through `GET /api/v1/routes` and `GET /api/v1/routes/:routeId`; the human-readable explanation is this document. A route is interactive only when its profile is active **and** the relay contains its tested typed executor.
 
 ## Request selection
 

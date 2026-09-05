@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Activity, ArrowRight, ExternalLink, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { RouteCatalogue } from "./route-catalogue";
 
 const statuses = ["", "CREATED", "DISPATCHED", "DELIVERED", "ADJUDICATING", "FINALIZED", "CALLBACK_EXECUTED", "FAILED", "TIMED_OUT"];
 const labels: Record<string, string> = { CREATED: "Created", DISPATCHED: "Dispatched", DELIVERED: "Delivered", ADJUDICATING: "Adjudicating", FINALIZED: "Finalized", CALLBACK_EXECUTED: "Callback executed", FAILED: "Failed", TIMED_OUT: "Timed out" };
@@ -58,6 +59,7 @@ export function Explorer() {
       <select aria-label="Filter by decision" value={decision} onChange={(event) => setDecision(event.target.value)}>{decisions.map((value) => <option key={value} value={value}>{value || "All decisions"}</option>)}</select>
     </section>
     <div className="explorer-source-note"><Activity size={16} /><span>Showing indexed Gateway records. Open a request to compare them with a direct GenLayer contract read.</span><Link href="/docs/explorer">How to read this data <ArrowRight size={14} /></Link></div>
+    <RouteCatalogue />
     {error ? <section className="empty-state"><ShieldAlert className="empty-icon" /><h2>Explorer unavailable</h2><p>{error}</p><button className="button secondary" onClick={() => void load()}>Try again</button></section> : loading && records.length === 0 ? <section className="empty-state"><p>Loading Gateway activity…</p></section> : records.length === 0 ? <section className="empty-state"><Search className="empty-icon" /><h2>No matching requests</h2><p>Try a different identifier or clear the filters.</p></section> : <section className="explorer-table-wrap"><table className="explorer-table"><thead><tr><th>Request</th><th>Route</th><th>Lifecycle</th><th>Decision</th><th>Evidence</th><th>Updated</th><th /></tr></thead><tbody>{records.map((record) => <tr key={record.requestId}><td><Link href={`/explorer/${record.requestId}`} className="explorer-request"><strong>{short(record.requestId)}</strong><small>{short(record.request.transactionHash)}</small></Link></td><td><code>{record.request.routeId ?? "gateway-adjudicator"}</code><small>{record.request.originChainId}</small></td><td><span className={`status-chip status-${record.status.toLowerCase()}`}>{statusLabel(record.status)}</span></td><td>{record.result ? <span className={`decision-chip decision-${record.result.decision.toLowerCase()}`}>{record.result.decision}</span> : <span className="muted-copy">Not final</span>}</td><td><code>{short(record.request.evidence.items[0]?.digest)}</code></td><td><time dateTime={record.updatedAt}>{new Date(record.updatedAt).toLocaleString()}</time></td><td><Link href={`/explorer/${record.requestId}`} aria-label={`Inspect ${record.requestId}`} className="icon-link"><ExternalLink size={15} /></Link></td></tr>)}</tbody></table><p className="table-caption">{records.length} record{records.length === 1 ? "" : "s"} · auto-refreshes while requests are active</p></section>}
   </main>;
 }

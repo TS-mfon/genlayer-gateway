@@ -1,0 +1,183 @@
+# Multi-Intelligent-Contract integration
+
+Gateway is designed to expose **reviewed GenLayer capabilities**, not an arbitrary remote-call button. An application can use the protocol-operated adjudicator or bring a different Intelligent Contract into the route catalogue after the contract, method, schema, authorization, and failure behavior have been reviewed.
+
+The browser observatory never selects a destination and never sends a transaction. The integrating application or a self-hosted operator performs the write-side work; Gateway's public website only exposes the reviewed route metadata and the resulting inspection data.
+
+## The three parties
+
+```text
+Origin application
+  owns user funds, request policy, callback, and business outcome
+
+Gateway route adapter
+  authenticates the origin request, selects one reviewed route,
+  encodes the typed call, relays it, and returns the result envelope
+
+GenLayer Intelligent Contract
+  evaluates the declared evidence under its validator/equivalence model
+  and stores the canonical result
+```
+
+A route is the binding between these parties. A contract address by itself is not a route.
+
+## Which contract does the MVP call?
+
+The live testnet route is `gateway-adjudicator`:
+
+- origin: Base Sepolia (`84532`);
+- destination: GenLayer Bradbury (`4221`);
+- destination: the configured `GatewayAdjudicator` address in the deployment artifact;
+- method: `adjudicate`;
+- result schema: `GatewayStoredResultV1`;
+- trust model: threshold-attested return delivery on testnet.
+
+An application using this route does **not** deploy another GenLayer contract. It deploys or integrates the origin-side Gateway interface, submits typed request commitments, and receives the result in its callback.
+
+## When to deploy your own Intelligent Contract
+
+Deploy a custom IC when the shared adjudicator cannot express your domain. Examples include:
+
+- a domain-specific method such as `evaluate_claim` or `check_policy`;
+- custom persistent state or a registry of approved evidence providers;
+- a result type larger than `PASS | FAIL | UNDETERMINED`;
+- a domain-specific validator strategy or equivalence rule;
+- a contract that needs to call other GenLayer contracts.
+
+You still do not make the browser accept an arbitrary address. Choose one of these operating models:
+
+1. **Managed route:** submit the contract for review and let Gateway operate the typed executor.
+2. **Self-hosted route:** operate the executor and relay yourself while using compatible envelopes and origin verification.
+3. **Application-owned direct integration:** call your own transport and GenLayer infrastructure, without claiming it is the managed Gateway route.
+
+## Route package
+
+Submit a versioned route package containing all of the following:
+
+```yaml
+routeId: claims-adjudicator-v1
+origin:
+  chainId: 84532
+  adapter: 0x...
+destination:
+  chainId: 4221
+  contract: 0x...
+  deploymentTransaction: 0x...
+  method: evaluate_claim
+  argumentSchema: ClaimsEvaluateArgsV1
+  resultSchema: ClaimsResultV1
+execution:
+  runnerVersion: <pinned GenVM runner>
+  authorizedSubmitter: 0x...
+  trustedRemote: 0x...
+security:
+  replayKey: requestId
+  sourceBinding: originChainId + originContract
+  callbackBinding: callback address from the request
+  undeterminedPolicy: recoverable-review
+evidence:
+  directTests: <path or report>
+  integrationTests: <path or report>
+  phaseGate: <testnet evidence artifact>
+```
+
+The package must also document fee quoting, expiry, retry behavior, timeout behavior, maximum payload sizes, and how a result is decoded without invoking an arbitrary method.
+
+## Request and result binding
+
+The origin request must commit to the route as well as the business input. At minimum, bind:
+
+```text
+requestId
+routeId
+origin chain ID
+origin contract
+requester
+callback
+nonce
+expiry
+question or typed arguments hash
+policy hash
+evidence hash
+```
+
+The returned result must bind the same request identity plus:
+
+```text
+decision or typed result
+reason / result commitment
+evidence commitment
+policy commitment
+destination transaction
+transport message ID
+```
+
+If any commitment differs, the origin receiver must reject the result. A relay may delay or fail to deliver, but it must not be able to substitute a different route or semantic request.
+
+## Typed adapter contract
+
+An adapter should have an explicit encoder and decoder rather than stringly-typed forwarding:
+
+```ts
+type ClaimsEvaluateArgsV1 = {
+  requestId: `0x${string}`;
+  claimant: `0x${string}`;
+  policyHash: `0x${string}`;
+  evidenceHash: `0x${string}`;
+};
+
+type ClaimsResultV1 = {
+  requestId: `0x${string}`;
+  decision: "APPROVE" | "DENY" | "UNDETERMINED";
+  reason: string;
+  evidenceHash: `0x${string}`;
+  policyHash: `0x${string}`;
+};
+
+function encodeClaims(args: ClaimsEvaluateArgsV1): string {
+  // Use the reviewed canonical encoding for this route.
+  return encodeAbiParameters(CLAIMS_ARGUMENT_TYPES, [args]);
+}
+
+function decodeClaims(raw: string): ClaimsResultV1 {
+  const parsed = ClaimsResultSchema.parse(JSON.parse(raw));
+  return parsed;
+}
+```
+
+The exact implementation belongs to the route package. The important invariant is that the encoder and decoder are versioned, strict, and tested against the deployed contract.
+
+## Activation checklist
+
+A route remains unavailable until all gates pass:
+
+1. Contract source and deployment address are pinned.
+2. The GenVM runner and dependencies are pinned.
+3. The destination method and argument/result schemas are versioned.
+4. The destination authorizes only the configured submitter and validates origin binding.
+5. The origin adapter trusts only the configured return authority.
+6. Replay protection and idempotent callbacks are tested.
+7. `UNDETERMINED`, timeout, missing result, and malformed result behavior is defined.
+8. Unit, direct-mode, integration, and failure tests pass.
+9. A live smoke test and route-specific 20-job phase gate produce evidence.
+10. The trust model is disclosed and accepted for the intended environment.
+
+Publishing a JSON profile or supplying a syntactically valid address is not activation evidence.
+
+## Adding another origin chain
+
+The destination route can be reused by another origin only after deploying a chain-specific adapter and receiver. The new origin must define its chain ID, transport endpoint, trusted remotes, fee model, receive-gas option, result receiver, and callback semantics. Run a fresh route/chain phase gate; Base Sepolia evidence does not prove another origin works.
+
+For Solana or another non-EVM origin, the envelope and authentication layer must be adapted to that chain's account and message model. Do not reuse EVM address validation or signature assumptions.
+
+## What developers can inspect
+
+Use the read-only surfaces to verify the route before integrating:
+
+- `/docs/routes` — route metadata and activation rules;
+- `GET /api/v1/routes` — machine-readable route catalogue;
+- `/explorer` — indexed request lifecycle;
+- `/explorer/:requestId` — direct GenLayer read and commitment comparison;
+- `/evidence` — deployment, smoke, phase-gate, and trust disclosures.
+
+The observatory is intentionally not a wallet or a transaction console. This separation keeps the public inspection surface from becoming an accidental authority over application funds.

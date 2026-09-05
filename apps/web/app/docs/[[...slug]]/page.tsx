@@ -12,6 +12,7 @@ const pages = [
   ["quickstart", "Quick start"],
   ["routes", "Route model"],
   ["adapters", "Custom contracts"],
+  ["custom-contracts", "Multi-contract integration"],
   ["protocol", "Protocol lifecycle"],
   ["api", "API reference"],
   ["security", "Security model"],

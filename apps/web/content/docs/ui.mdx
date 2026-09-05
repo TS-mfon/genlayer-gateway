@@ -6,11 +6,14 @@ The public website is intentionally read-only. It is designed for developers, re
 
 - `/` — architecture, integration explanation, and evidence summary.
 - `/explorer` — searchable request index with bounded polling for active requests.
+- `/explorer` — also exposes the reviewed route catalogue: destination contract, method, schemas, executor readiness, and trust model.
 - `/explorer/:requestId` — lifecycle, commitments, direct GenLayer read, and source comparison.
 - `/evidence` — published deployment and phase-gate record.
 - `/docs/*` — protocol and integration documentation.
 
 There are no supported browser actions for creating escrow, submitting evidence, dispatching requests, or settling funds. Those actions belong to an integrating application or an operator-controlled relay.
+
+The website is not a local job-management workspace. It does not persist browser-created jobs, claim work, or simulate settlement. This is intentional: a local browser store must never be confused with the origin-chain request registry or a finalized GenLayer result.
 
 ## Reading a request
 
